@@ -16,7 +16,7 @@ doc-to-sketch 是一个把文档内容转换为**中文手绘技术解释图**�
 
 - **本地内容输入**：Markdown、DOCX、PDF、PPTX、纯文本
 - **飞书文档 URL 输入**：通过轻量脚本获取飞书文档内容（开发中）
-- **多宿主安装**：Codex CLI（当前可用）；Claude Code（计划支持，待验证）
+- **多宿主安装**：Codex CLI（当前可用）；Claude Code（结构兼容，待端到端验证）
 
 ---
 
@@ -112,26 +112,29 @@ git clone https://github.com/evidentloop/doc-to-sketch.git
 cd doc-to-sketch
 ```
 
-> ⚠️ 目录结构正在重组：Skill 将从 `ian-handdrawn-ppt/` 子目录提升到根级。以下安装方式仍可用，但后续会简化。
-
 **Codex CLI 安装：**
 
 ```bash
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
-cp -R ./ian-handdrawn-ppt "${CODEX_HOME:-$HOME/.codex}/skills/"
+ln -s "$(pwd)" "${CODEX_HOME:-$HOME/.codex}/skills/doc-to-sketch"
 ```
 
-**Claude Code 安装（重组完成后可用）：**
+**Claude Code 安装（结构兼容，待端到端验证）：**
 
 ```bash
-# 目录重组完成后，以下命令将可用（当前尚未验证）
+# Skill 格式兼容，但完整链路尚未实测
+# 方式 1：clone + symlink
+git clone https://github.com/evidentloop/doc-to-sketch.git ~/.agents/skills/doc-to-sketch
+ln -s ~/.agents/skills/doc-to-sketch ~/.claude/skills/doc-to-sketch
+
+# 方式 2：npx（需 package.json，Phase 3 后可用）
 npx skills add evidentloop/doc-to-sketch
 ```
 
 安装后，在 Codex 里使用：
 
 ```text
-Use $ian-handdrawn-ppt 把这篇文章做成 1 张封面图 + 3 张正文配图。
+Use $doc-to-sketch 把这篇文章做成 1 张封面图 + 3 张正文配图。
 ```
 
 ---
@@ -141,7 +144,7 @@ Use $ian-handdrawn-ppt 把这篇文章做成 1 张封面图 + 3 张正文配图�
 ### 文章封面 + 正文配图
 
 ```text
-Use $ian-handdrawn-ppt 把下面这篇文章做成 1 张 21:9 中文封面图 + 3 张 16:9 正文配图。
+Use $doc-to-sketch 把下面这篇文章做成 1 张 21:9 中文封面图 + 3 张 16:9 正文配图。
 风格保持中文手绘技术解释图，文字尽量短，每张图只表达一个观点。
 
 <粘贴文章>
@@ -150,7 +153,7 @@ Use $ian-handdrawn-ppt 把下面这篇文章做成 1 张 21:9 中文封面图 + 
 ### 课程课件页
 
 ```text
-Use $ian-handdrawn-ppt 把这份课程大纲整理成 8 页中文手绘技术课件图。
+Use $doc-to-sketch 把这份课程大纲整理成 8 页中文手绘技术课件图。
 面向有基础的新手，每页一个核心概念，输出 slide-by-slide blueprint，然后生成最终 PNG 页面图。
 
 <粘贴课程大纲>
@@ -159,7 +162,7 @@ Use $ian-handdrawn-ppt 把这份课程大纲整理成 8 页中文手绘技术课
 ### 只规划，不生图
 
 ```text
-Use $ian-handdrawn-ppt 先不要生图。
+Use $doc-to-sketch 先不要生图。
 请把这篇内容规划成一套 10 页左右的中文手绘技术 PPT-style image deck。
 每页给出标题、主旨、版式 archetype、可见文字和图像 brief。
 

@@ -5,7 +5,7 @@
 将 `evidentloop/doc-to-sketch`（fork 自 `helloianneo/ian-handdrawn-ppt`）从 Codex 绑定的子目录 Skill 改造为：
 1. 根级 Skill 结构（去掉 ian-handdrawn-ppt/ 子目录嵌套）
 2. 支持飞书文档 URL 作为输入（轻量 Python 脚本）
-3. Codex / Claude Code 均可安装使用
+3. Codex 当前可用 / Claude Code 结构兼容，待端到端验证
 
 ## 不变量
 

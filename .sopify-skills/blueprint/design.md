@@ -26,6 +26,8 @@ doc-to-sketch (Skill)
 
 **核心思路**：Skill workflow 中增加一个 ingest 分支 —— 如果输入是飞书 URL，先调用 `scripts/feishu_fetch.py` 获取 Markdown，然后走正常的 Skill 流水线。
 
+**架构口径**：飞书内容获取基于官方 OpenAPI（docx / Block API）+ 自建 `feishu_fetch.py`，v1 不引入任何外部运行时依赖。
+
 ## 飞书获取脚本设计
 
 ### scripts/feishu_fetch.py
@@ -92,7 +94,7 @@ python3 scripts/feishu_fetch.py "https://xxx.feishu.cn/docx/xxxxx"
 | 宿主 | 安装方式 | Skill 入口 |
 |------|----------|-----------|
 | Codex CLI | `cp -R` 或 `ln -s` 到 `$CODEX_HOME/skills/` | SKILL.md |
-| Claude Code | `npx skills add evidentloop/doc-to-sketch` | SKILL.md |
+| Claude Code | `npx skills add evidentloop/doc-to-sketch`（需 package.json，Phase 3 后可用） | SKILL.md |
 | 手动 | `git clone` + 按需使用 | SKILL.md |
 
 所有宿主共用同一个 SKILL.md，因为 Skill 格式（YAML frontmatter + Markdown workflow）在 Codex 和 Claude Code 间兼容。
