@@ -1,11 +1,11 @@
 ---
-name: ian-handdrawn-ppt
-description: Create final Chinese handdrawn technical article/PPT-style page images from articles, Markdown, PDFs, DOCX files, existing slide decks, course notes, scripts, outlines, or rough ideas. Use when the user asks to turn content into PPT/PPTX/slides/courseware/课件/演示稿/配图/效果图 in a refined Chinese handdrawn technical explanation style, to plan such pages, to choose page layouts from semantic content, or to generate complete image-model pages with Chinese text baked into the final visual. Default article outputs use 21:9 covers and 16:9 body illustrations.
+name: doc-to-sketch
+description: Create final Chinese handdrawn technical article/PPT-style page images from articles, Markdown, PDFs, DOCX files, Feishu (飞书) document URLs, existing slide decks, course notes, scripts, outlines, or rough ideas. Use when the user asks to turn content into PPT/PPTX/slides/courseware/课件/演示稿/配图/效果图/帮我出图 in a refined Chinese handdrawn technical explanation style, to plan such pages, to choose page layouts from semantic content, or to generate complete image-model pages with Chinese text baked into the final visual. Default article outputs use 21:9 covers and 16:9 body illustrations.
 ---
 
-# Ian Handdrawn PPT
+# Doc to Sketch
 
-Turn source material into a Chinese handdrawn technical PPT-style image deck. Optimize for commercial delivery: clear narrative, semantic page archetypes, exact short Chinese text, refined handdrawn diagrams, and deck-level visual consistency.
+Turn source material into a Chinese handdrawn technical PPT-style image deck. Supports direct Feishu document URL input — paste a link and say "帮我出图". Optimize for commercial delivery: clear narrative, semantic page archetypes, exact short Chinese text, refined handdrawn diagrams, and deck-level visual consistency.
 
 ## Operating Rule
 
@@ -37,6 +37,7 @@ Do not use legacy bordered PPT reference images unless the user explicitly asks 
 
 1. **Ingest material**
    - Read the provided content or attached file.
+   - If the input is a Feishu document URL (`feishu.cn/docx/` or `lark-docx` pattern), run `scripts/feishu_fetch.py` to fetch the document content as Markdown. This requires `FEISHU_APP_ID` and `FEISHU_APP_SECRET` environment variables to be set. If the script is not yet available or credentials are missing, inform the user and offer to proceed with manually pasted content instead.
    - If the input is `.pptx`, extract the source content and visual intent only; do not edit or package the PPTX inside this skill.
    - If the input is `.docx`, use the Documents plugin or skill to extract content.
    - If the input is `.pdf`, use the PDF/document tooling appropriate to the task.
