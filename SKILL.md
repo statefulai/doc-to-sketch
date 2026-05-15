@@ -29,7 +29,7 @@ Load only the references needed for the current task:
 - `references/prompt-patterns.md`: prompt templates for complete image-model slide pages.
 
 Use `assets/theme-tokens.json` as the compact theme token file when writing prompts.
-Use `assets/reference-handdrawn-article-illustration-style.png` as the active style anchor for blog/article cover and body illustrations.
+Use `assets/style-anchor-cover-21x9.png` as the active style anchor for blog/article cover and body illustrations.
 When the current image tool supports local reference images, load or attach this style anchor before generation. When it does not, use the theme tokens plus the reference-match clause in `references/prompt-patterns.md`, and report the style as prompt-matched rather than image-referenced.
 Do not use legacy bordered PPT reference images unless the user explicitly asks to recreate the older bordered look.
 
@@ -37,7 +37,7 @@ Do not use legacy bordered PPT reference images unless the user explicitly asks 
 
 1. **Ingest material**
    - Read the provided content or attached file.
-   - If the input is a Feishu document URL (`feishu.cn/docx/` or `lark-docx` pattern), run `scripts/feishu_fetch.py` to fetch the document content as Markdown. This requires `FEISHU_APP_ID` and `FEISHU_APP_SECRET` environment variables to be set. If the script is not yet available or credentials are missing, inform the user and offer to proceed with manually pasted content instead.
+   - If the input is a Feishu/Lark document URL (`feishu.cn`, `lark.suite.com`, or `larksuite.com` docx/wiki URL), run `python3 scripts/feishu_fetch.py fetch "<url>"` to fetch the document content as Markdown. On first use, `fetch` opens browser OAuth authorization and then continues reading the document. If authorization cannot complete, inform the user and offer to proceed with manually pasted content instead.
    - If the input is `.pptx`, extract the source content and visual intent only; do not edit or package the PPTX inside this skill.
    - If the input is `.docx`, use the Documents plugin or skill to extract content.
    - If the input is `.pdf`, use the PDF/document tooling appropriate to the task.

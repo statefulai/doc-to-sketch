@@ -8,7 +8,7 @@ Use this reference when source material or output requirements are incomplete.
 - Markdown notes
 - DOCX document
 - PDF document
-- Feishu (飞书) document URL (e.g. `https://xxx.feishu.cn/docx/...` or `https://xxx.lark.cn/docx/...`)
+- Feishu/Lark document URL (e.g. `https://xxx.feishu.cn/docx/...`, `https://xxx.feishu.cn/wiki/...`, or `https://xxx.larksuite.com/docx/...`)
 - Existing PPTX deck
 - Course outline
 - Lesson transcript or video script

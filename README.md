@@ -1,8 +1,12 @@
+<p align="center">
+  <img src="assets/style-anchor-cover-21x9.png" alt="文档变手绘图 — AI Skill · 中文技术解释风格" width="100%" />
+</p>
+
 # doc-to-sketch
 
 > 把本地文档或飞书文档内容，转换为中文手绘技术解释风格的 PPT-style 页面图。
 >
-> AI Skill + prompt 资产 | 21:9 封面 | 16:9 正文配图 | PNG 输出 | 飞书文档输入（开发中）
+> AI Skill + prompt 资产 | 21:9 封面 | 16:9 正文配图 | PNG 输出 | 飞书文档输入
 
 > **📌 Fork 自 [ian-handdrawn-ppt](https://github.com/helloianneo/ian-handdrawn-ppt) by Ian。**
 
@@ -15,7 +19,7 @@ doc-to-sketch 是一个把文档内容转换为**中文手绘技术解释图**�
 基于 [ian-handdrawn-ppt](https://github.com/helloianneo/ian-handdrawn-ppt) 的视觉 DNA 和叙事规划系统，当前支持：
 
 - **本地内容输入**：Markdown、DOCX、PDF、PPTX、纯文本
-- **飞书文档 URL 输入**：通过轻量脚本获取飞书文档内容（开发中）
+- **飞书文档 URL 输入**：通过轻量脚本获取飞书文档内容
 - **多宿主安装**：Codex CLI（当前可用）；Claude Code（结构兼容，待端到端验证）
 
 ---
@@ -74,10 +78,8 @@ doc-to-sketch 是一个把文档内容转换为**中文手绘技术解释图**�
 参考图在：
 
 ```text
-ian-handdrawn-ppt/assets/reference-handdrawn-article-illustration-style.png
+assets/style-anchor-cover-21x9.png
 ```
-
-> 注：目录重组后路径将变为 `assets/reference-handdrawn-article-illustration-style.png`
 
 ---
 
@@ -127,8 +129,8 @@ ln -s "$(pwd)" "${CODEX_HOME:-$HOME/.codex}/skills/doc-to-sketch"
 git clone https://github.com/evidentloop/doc-to-sketch.git ~/.agents/skills/doc-to-sketch
 ln -s ~/.agents/skills/doc-to-sketch ~/.claude/skills/doc-to-sketch
 
-# 方式 2：npx（需 package.json，Phase 3 后可用）
-npx skills add evidentloop/doc-to-sketch
+# 方式 2：npx（当前未启用；待 package.json 发布后使用）
+# npx skills add evidentloop/doc-to-sketch
 ```
 
 安装后，在 Codex 里使用：
@@ -169,6 +171,40 @@ Use $doc-to-sketch 先不要生图。
 <粘贴素材>
 ```
 
+### 飞书文档直接出图
+
+首次使用飞书 URL 时，skill 会自动打开浏览器完成授权；授权成功后继续读取文档。你也可以提前手动预授权：
+
+```bash
+python3 scripts/feishu_fetch.py auth
+```
+
+授权后可以直接把飞书 `docx` 或知识库 `wiki` 链接交给 skill：
+
+```text
+Use $doc-to-sketch 把这篇飞书文档做成 1 张 21:9 封面图 + 4 张 16:9 正文配图。
+风格保持中文手绘技术解释图，每张图只表达一个核心观点。
+
+https://xxx.feishu.cn/docx/xxxxx
+```
+
+默认使用 doc-to-sketch 的共享飞书应用完成零配置授权，只申请读取 docx/wiki 所需的只读权限和刷新 token 权限。授权 token 保存在本机 `~/.doc-to-sketch/token.json`。
+
+企业或敏感场景建议使用自建飞书应用覆盖默认凭证。自建应用需要开通 `docx:document:readonly`、`wiki:wiki:readonly`、`offline_access`，并配置 OAuth 回调地址：
+
+```text
+http://localhost:19823/callback
+```
+
+然后在运行 `fetch` 或 `auth` 前设置环境变量：
+
+```bash
+export FEISHU_APP_ID=your_app_id
+export FEISHU_APP_SECRET=your_app_secret
+```
+
+如果写入 `.env` 文件，需要先执行 `source .env`；脚本不会自动读取 `.env`。
+
 更多示例见 [examples/prompts.md](examples/prompts.md)。
 
 ---
@@ -190,50 +226,31 @@ Use $doc-to-sketch 先不要生图。
 
 ## 目录结构
 
-**当前结构：**
-
 ```text
 .
-├── README.md
-├── LICENSE
-├── NOTICE.md
+├── SKILL.md                    ← Skill 定义入口
+├── references/                 ← prompt 资产
+│   ├── intake.md
+│   ├── narrative-planning.md
+│   ├── output-quality.md
+│   ├── prompt-patterns.md
+│   ├── slide-archetypes.md
+│   └── visual-dna-v6.md
+├── assets/
+│   ├── style-anchor-cover-21x9.png
+│   └── theme-tokens.json
+├── scripts/                    ← 飞书文档获取脚本
+│   └── feishu_fetch.py
+├── tests/
+│   └── test_feishu_fetch.py
 ├── examples/
 │   ├── images/
-│   │   ├── cover-automation-boundary.png
-│   │   ├── page-01-reading-two-things.png
-│   │   ├── page-02-where-to-automate.png
-│   │   └── page-03-three-question-method.png
 │   └── prompts.md
-└── ian-handdrawn-ppt/          ← 当前 Skill 安装入口
-    ├── SKILL.md
-    ├── assets/
-    │   ├── reference-handdrawn-article-illustration-style.png
-    │   └── theme-tokens.json
-    └── references/
-        ├── intake.md
-        ├── narrative-planning.md
-        ├── output-quality.md
-        ├── prompt-patterns.md
-        ├── slide-archetypes.md
-        └── visual-dna-v6.md
-```
-
-**目标结构（Phase 0 完成后）：**
-
-```text
-.
-├── SKILL.md                    ← 提升到根级
-├── references/                 ← 提升到根级
-├── assets/                     ← 提升到根级
-├── scripts/
-│   └── feishu_fetch.py         ← Phase 2 产出
-├── examples/
+├── .env.example
 ├── README.md
 ├── LICENSE
 └── NOTICE.md
 ```
-
-安装到 Codex 时，当前使用 `ian-handdrawn-ppt/` 子目录；重组后使用根目录。
 
 ---
 
