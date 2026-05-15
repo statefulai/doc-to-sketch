@@ -110,7 +110,7 @@ assets/style-anchor-cover-21x9.png
 克隆仓库：
 
 ```bash
-git clone https://github.com/evidentloop/doc-to-sketch.git
+git clone https://github.com/statefulai/doc-to-sketch.git
 cd doc-to-sketch
 ```
 
@@ -126,11 +126,11 @@ ln -s "$(pwd)" "${CODEX_HOME:-$HOME/.codex}/skills/doc-to-sketch"
 ```bash
 # Skill 格式兼容，但完整链路尚未实测
 # 方式 1：clone + symlink
-git clone https://github.com/evidentloop/doc-to-sketch.git ~/.agents/skills/doc-to-sketch
+git clone https://github.com/statefulai/doc-to-sketch.git ~/.agents/skills/doc-to-sketch
 ln -s ~/.agents/skills/doc-to-sketch ~/.claude/skills/doc-to-sketch
 
 # 方式 2：npx（当前未启用；待 package.json 发布后使用）
-# npx skills add evidentloop/doc-to-sketch
+# npx skills add statefulai/doc-to-sketch
 ```
 
 安装后，在 Codex 里使用：
@@ -269,7 +269,7 @@ export FEISHU_APP_SECRET=your_app_secret
 ## 相关资料
 
 - 原项目: [ian-handdrawn-ppt](https://github.com/helloianneo/ian-handdrawn-ppt) by Ian
-- 组织: [evidentloop](https://github.com/evidentloop)
+- 组织: [statefulai](https://github.com/statefulai)
 
 ---
 

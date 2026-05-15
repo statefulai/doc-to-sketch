@@ -21,4 +21,4 @@ doc-to-sketch builds on the original Codex Skill with the following changes:
 
 ## Maintained by
 
-- **evidentloop** — <https://github.com/evidentloop>
+- **statefulai** — <https://github.com/statefulai>
