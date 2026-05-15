@@ -205,6 +205,32 @@ export FEISHU_APP_SECRET=your_app_secret
 
 更多示例见 [examples/prompts.md](examples/prompts.md)。
 
+### 可选本地图像 fallback
+
+当宿主没有原生图片生成功能时，可以手动使用本地 fallback 脚本生成 PNG。
+
+**这不是默认工作流。** 默认路径是宿主原生图片生成（如 Codex 内置 image model）。仅当宿主无出图能力、且用户已配置好 provider 时使用。
+
+使用前需要配置环境变量：
+
+```bash
+export IMAGE_API_KEY=your_api_key          # 含鉴权前缀，如 "Bearer sk-xxx" 或 "sk-xxx"
+export IMAGE_API_URL=https://api.example.com/v1/images/generations
+export IMAGE_MODEL=gpt-image-2             # 可选
+```
+
+然后手动调用：
+
+```bash
+# 推荐：从文件读取 prompt（避免 shell 转义问题）
+scripts/generate_image.sh --prompt-file prompt.txt --size 1920x1080 --output-dir output/
+
+# 或直接传入短 prompt
+scripts/generate_image.sh --prompt "简单的技术架构图" --output-dir output/
+```
+
+> ⚠️ 此脚本会将 prompt 发送到用户配置的第三方图片生成服务。
+
 ---
 
 ## 工作流程
@@ -237,8 +263,9 @@ export FEISHU_APP_SECRET=your_app_secret
 ├── assets/
 │   ├── style-anchor-cover-21x9.png
 │   └── theme-tokens.json
-├── scripts/                    ← 飞书文档获取脚本
-│   └── feishu_fetch.py
+├── scripts/                    ← 辅助脚本
+│   ├── feishu_fetch.py         ← 飞书文档获取
+│   └── generate_image.sh       ← 可选图像生成 fallback
 ├── tests/
 │   └── test_feishu_fetch.py
 ├── examples/

@@ -69,6 +69,7 @@ Do not use legacy bordered PPT reference images unless the user explicitly asks 
 6. **Build output**
    - For planning-only requests, deliver a structured blueprint with deck type, slide count, title, main point, archetype, content blocks, visual brief, and missing inputs.
    - For production requests, use the built-in image generation model to generate one complete page image per slide/visual. Use one image generation call per distinct page brief, not a generic repeated template.
+   - If the current host does not support native image generation and the user has configured the optional local image fallback (`scripts/generate_image.sh` with `IMAGE_API_KEY` and `IMAGE_API_URL`), you may use that script to render pages. Treat this as a compatibility fallback, not the primary workflow. Do not use the fallback when the host provides native image generation.
    - When the user asks for a cover plus body illustrations, generate the cover as 21:9 and body illustrations as 16:9 unless the user specifies otherwise.
    - Before generating multiple pages, write one compact deck style lock and reuse it verbatim in every page prompt. Add page-specific layout instructions only for the central diagram/content area.
    - Keep all visible Chinese text short and exact in the prompt. Include a `Required text only` list for each page.
