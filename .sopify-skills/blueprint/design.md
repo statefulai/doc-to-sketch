@@ -14,7 +14,7 @@ doc-to-sketch (Skill)
 │   └── prompt-patterns.md
 ├── assets/
 │   ├── theme-tokens.json
-│   └── reference-style.png
+│   └── style-anchor-cover-21x9.png
 ├── scripts/
 │   └── feishu_fetch.py         ← 飞书文档 → Markdown 轻量脚本
 ├── examples/
@@ -34,16 +34,26 @@ doc-to-sketch (Skill)
 
 **功能**：给定飞书文档 URL → 输出 Markdown 文本
 
-**鉴权**：自建应用 tenant_access_token 模式
-- 环境变量：`FEISHU_APP_ID`、`FEISHU_APP_SECRET`
-- 运行时获取 token，不持久化
+**鉴权**：OAuth 2.0 user_access_token 模式
+- 内置飞书应用凭证（Skill 共享应用），零配置即可使用
+- 可选覆盖：环境变量 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`
+- 首次运行 `auth` 子命令 → 浏览器授权 → 本地存储 token
+- 后续自动加载 token，过期自动刷新
+- token 过期缓冲期：提前 5 分钟触发刷新，避免请求中途 token 失效
+- scope 变更检测：代码更新权限需求后，加载旧 token 时自动比对 scope 并提示重新授权
+- 以用户身份读取文档，无需将文档分享给应用
 
 **API 调用链**：
 ```
-1. POST /open-apis/auth/v3/tenant_access_token/internal → token
-2. GET /open-apis/docx/v1/documents/{document_id} → 元信息
-3. GET /open-apis/docx/v1/documents/{document_id}/blocks → Block 列表（分页）
-4. Block 树递归 → Markdown 文本输出
+首次授权：
+1. GET /open-apis/authen/v1/authorize → 浏览器授权页
+2. localhost 回调 → 获取 code
+3. POST /open-apis/authen/v2/oauth/token → user_access_token + refresh_token
+
+读取文档：
+1. GET /open-apis/docx/v1/documents/{document_id} → 元信息
+2. GET /open-apis/docx/v1/documents/{document_id}/blocks → Block 列表（分页）
+3. Block 树递归 → Markdown 文本输出
 ```
 
 **Block → Markdown 映射**：
@@ -61,20 +71,25 @@ doc-to-sketch (Skill)
 **调用方式**（由 AI agent 在 Skill workflow 内部自动执行，用户不需要手动操作）：
 ```bash
 # AI agent 内部调用（用户不可见）
-python3 scripts/feishu_fetch.py "https://xxx.feishu.cn/docx/xxxxx"
+python3 scripts/feishu_fetch.py fetch "https://xxx.feishu.cn/docx/xxxxx"
+python3 scripts/feishu_fetch.py fetch "https://xxx.feishu.cn/wiki/xxxxx"
 ```
 
-**调试/开发用途**（仅开发者）：
+**授权行为**：
 ```bash
-# 设置环境变量
-export FEISHU_APP_ID=xxx
-export FEISHU_APP_SECRET=xxx
+# fetch 首次读取且无有效 token 时会自动打开浏览器授权
+python3 scripts/feishu_fetch.py fetch "https://xxx.feishu.cn/docx/xxxxx"
 
-# 单独测试脚本
-python3 scripts/feishu_fetch.py "https://xxx.feishu.cn/docx/xxxxx"
+# 可选：提前浏览器授权
+python3 scripts/feishu_fetch.py auth
+
+# 高级：自定义飞书应用凭证（可选）
+# export FEISHU_APP_ID=xxx
+# export FEISHU_APP_SECRET=xxx
+# 自建应用需配置回调地址: http://localhost:19823/callback
 ```
 
-**依赖**：仅 Python 标准库（urllib + json），无外部依赖
+**依赖**：仅 Python 标准库（urllib + json + http.server + webbrowser），无外部依赖
 
 ## SKILL.md 扩展
 
@@ -83,7 +98,7 @@ python3 scripts/feishu_fetch.py "https://xxx.feishu.cn/docx/xxxxx"
 ```
 1. Ingest material
    - If input is a Feishu/Lark document URL:
-     1. Run `python3 scripts/feishu_fetch.py "<url>"` to get Markdown
+     1. Run `python3 scripts/feishu_fetch.py fetch "<url>"` to get Markdown
      2. Parse the Markdown output as the source material
    - If input is a local file: (existing logic)
    - If input is plain text/Markdown: (existing logic)
@@ -94,7 +109,7 @@ python3 scripts/feishu_fetch.py "https://xxx.feishu.cn/docx/xxxxx"
 | 宿主 | 安装方式 | Skill 入口 |
 |------|----------|-----------|
 | Codex CLI | `cp -R` 或 `ln -s` 到 `$CODEX_HOME/skills/` | SKILL.md |
-| Claude Code | `npx skills add evidentloop/doc-to-sketch`（需 package.json，Phase 3 后可用） | SKILL.md |
+| Claude Code | clone + symlink；`npx skills add` 待 package.json 完成后启用 | SKILL.md |
 | 手动 | `git clone` + 按需使用 | SKILL.md |
 
 所有宿主共用同一个 SKILL.md，因为 Skill 格式（YAML frontmatter + Markdown workflow）在 Codex 和 Claude Code 间兼容。

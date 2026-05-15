@@ -8,16 +8,22 @@
 
 ## 认证体验
 
-**首版定义**：首次配置凭证后直接贴链接使用。
+**首版定义**：默认使用 doc-to-sketch 共享飞书应用凭证，首次 fetch 自动打开浏览器授权，授权后继续读取文档。
 
 | 步骤 | 用户动作 | 频率 |
 |------|---------|------|
-| 1. 创建飞书自建应用 | 在 open.feishu.cn 创建应用，获取 APP_ID / APP_SECRET | 一次性 |
-| 2. 开通权限 | docx:document:readonly | 一次性 |
-| 3. 设置环境变量 | `export FEISHU_APP_ID=xxx` / `export FEISHU_APP_SECRET=xxx` | 每个终端会话 |
-| 4. 使用 Skill | 给飞书文档 URL + 出图指令 | 每次 |
+| 1. 使用 Skill | 给飞书文档 URL + 出图指令；首次无有效 token 时自动弹出浏览器授权 | 每次 |
+| 2. 手动预授权（可选） | 运行 `python3 scripts/feishu_fetch.py auth`，提前完成浏览器授权 | 按需 |
+| 3. 自建应用覆盖（可选） | 企业或敏感场景设置 `FEISHU_APP_ID` / `FEISHU_APP_SECRET`，并配置 `http://localhost:19823/callback` 后重新授权 | 按需 |
 
-**不是零配置**。首次需要 ~10 分钟配置飞书应用和环境变量，之后直接用。后续版本可考虑一次性授权流（OAuth），但首版不做。
+**鉴权方式**：OAuth 2.0 authorization code flow（RFC 6749），获取 `user_access_token`。
+- 以用户身份读取文档，无需把文档分享给应用
+- token 本地存储（`~/.doc-to-sketch/token.json`），过期自动刷新
+- 刷新失败、scope 变更或 app_id 变更时由 fetch 自动触发浏览器重新授权
+- 默认共享应用只用于零配置授权；共享应用身份可被公开复用，因此权限应保持最小化
+- 自建应用凭证通过环境变量覆盖，不提交到仓库
+
+**零配置边界**：普通用户只需首次浏览器授权；企业或敏感场景建议自建飞书应用并用环境变量覆盖默认凭证。
 
 ## URL 支持矩阵
 
@@ -28,12 +34,12 @@
 | 标准文档 URL | `https://xxx.feishu.cn/docx/AbCdEfGhIj` | ✅ 首版支持 |
 | 带查询参数 | `https://xxx.feishu.cn/docx/AbCdEfGhIj?from=xxx` | ✅ 首版支持（忽略参数） |
 | Lark 域名 | `https://xxx.lark.suite.com/docx/AbCdEfGhIj` | ✅ 首版支持 |
+| 知识库节点 URL | `https://xxx.feishu.cn/wiki/AbCdEfGhIj` | ✅ 首版支持（通过 wiki API 解析 → docx document_id） |
 
 **首版不支持（明确报错）：**
 
 | URL 形态 | 示例 | 说明 |
 |----------|------|------|
-| 知识库节点 URL | `https://xxx.feishu.cn/wiki/AbCdEfGhIj` | 需额外 API 获取 document_id，后续可考虑 |
 | 旧版文档 (doc) | `https://xxx.feishu.cn/docs/AbCdEfGhIj` | 旧版 API，不在 Block API 范围 |
 | 电子表格 / 多维表格 | `https://xxx.feishu.cn/sheets/...` / `.../base/...` | 非文档类型 |
 | 任意其他 URL | - | 统一提示"当前只支持 docx 文档 URL" |
@@ -87,36 +93,45 @@
 ### Scope / Non-Goals
 
 **支持范围（最小通用子集）**：
-- tenant_access_token 鉴权（应用级，从环境变量读取）
+- OAuth user_access_token 鉴权（用户级，首次浏览器授权 + 本地 token 存储）
 - docx 文档 URL → document_id 提取
 - Block API 分页获取 + block tree 递归
 - 核心 8 类 Block → Markdown 渲染
 - 5 类基础错误处理
+- token 自动刷新（refresh_token）
+- token 过期缓冲期（提前 5 分钟触发刷新，避免请求中途 token 失效）
+- scope 变更检测（代码更新权限需求后，加载旧 token 时自动比对 scope 并提示重新授权）
 
 **明确不做（Non-Goals）**：
-- OAuth 用户登录 / 浏览器回调 / token 持久化
 - Bitable / 评论 / 电子表格 / 画板
 - 图片二进制下载落地
-- 内置凭证 / SSL 关闭 / retry 重试
+- SSL 关闭 / retry 重试
 
 ### 架构
 
-**单文件 Python 脚本**（~500-700 行），无外部依赖（仅 urllib + json）。
+**单文件 Python 脚本**（~600-900 行），无外部依赖（仅 urllib + json + http.server）。
 
 ```
 feishu_fetch.py
-├── FeishuClient          # 最小客户端
-│   ├── __init__()        # 从 env 读取 APP_ID/APP_SECRET
-│   ├── _get_token()      # tenant_access_token 获取
-│   └── _request()        # 统一 HTTP 请求（带 token header）
+├── FeishuAuth            # OAuth 授权
+│   ├── __init__()        # 内置凭证 + env 可选覆盖
+│   ├── login()           # 启动 localhost 回调 + 打开浏览器授权
+│   ├── _exchange_code()  # code → user_access_token + refresh_token
+│   ├── _refresh_token()  # refresh_token → 新 user_access_token
+│   ├── _load_token()     # 从本地文件加载 token（含 scope 变更检测）
+│   └── _save_token()     # 写入 ~/.doc-to-sketch/token.json（含 scope 快照）
+├── FeishuClient          # HTTP 客户端
+│   ├── __init__()        # 接收 auth 实例
+│   └── request()         # 统一 HTTP 请求（带 Authorization header）
 ├── DocumentFetcher       # 文档抓取
-│   ├── parse_url()       # URL → document_id
-│   ├── fetch_blocks()    # 分页获取所有 blocks
-│   └── _fetch_children() # 递归获取子 blocks
+│   ├── parse_url()       # URL → (url_type, token)
+│   ├── resolve_document_id() # url_type + token → document_id (wiki 需额外 API)
+│   ├── _resolve_wiki_node()  # wiki node_token → docx document_id
+│   └── fetch_blocks()    # 分页获取所有 blocks
 ├── MarkdownRenderer      # Markdown 渲染
 │   ├── render()          # block tree → Markdown 字符串
 │   └── _render_block()   # 单 block 渲染（按 block_type 分派）
-└── main()                # argparse 入口
+└── main()                # argparse 入口（auth / fetch 子命令）
 ```
 
 ### Block 类型支持
@@ -131,7 +146,7 @@ feishu_fetch.py
 | CODE | 14 | ` ```lang ``` ` | P0 |
 | CALLOUT | 19 | `> 💡 ` | P0 |
 | DIVIDER | 22 | `---` | P0 |
-| TABLE | 25 | Markdown 表格（递归 row/cell） | P0 |
+| TABLE | 31 | Markdown 表格（递归 row/cell） | P0 |
 | TABLE_CELL | - | (容器，递归子 block) | P0 |
 | IMAGE | 27 | `![Image](token:xxx)` 占位 | P1 |
 | 其他 | - | `<!-- unsupported block_type: N -->` | 降级 |
@@ -141,11 +156,15 @@ feishu_fetch.py
 ```
 错误类型          → 用户可见信息
 ─────────────────────────────────────────────
-缺少环境变量      → "请设置 FEISHU_APP_ID 和 FEISHU_APP_SECRET"
-401 token 失效   → "Token 已过期，请检查 APP_ID/APP_SECRET"
-403 无权限        → "需要 docx:document:readonly 权限"
+未授权            → fetch 自动打开浏览器授权，授权后继续读取文档
+401 token 失效   → "Token 已过期，正在自动刷新..."（刷新失败 → "请重新运行 auth 授权"）
+                   注意：token 有过期缓冲期（提前 5 分钟刷新），正常流程下不应出现 401
+403 无权限        → "当前用户无权访问此文档"
 404 文档不存在    → "文档 ID 无效或已被删除"
-不支持的 URL 类型 → "当前只支持 docx 文档 URL"
+不支持的 URL 类型 → "当前只支持 docx 文档 URL"（wiki 已支持，docs/sheets/base 报错）
+scope 不匹配     → "代码权限需求已更新，请重新运行 auth 授权"
+app_id 不匹配    → "飞书应用配置已变更，请重新完成飞书授权"
+token 文件损坏   → "本地 token 文件已损坏，请重新运行 auth 授权"
 ```
 
 ## SKILL.md 修改点

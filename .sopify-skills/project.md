@@ -9,7 +9,7 @@
 
 - Skill 格式: YAML frontmatter + Markdown（Codex / Claude Code 兼容）
 - 辅助脚本: Python 3（零外部依赖，仅标准库）
-- 分发: git clone 或 npx skills add
+- 分发: git clone；`npx skills add` 待 package.json 完成后启用
 
 ## 目录约定
 
@@ -26,5 +26,7 @@
 
 ## 敏感信息
 
-- 飞书 App ID / App Secret 通过环境变量配置，不入库
-- .env.example 提供模板
+- 默认内置 doc-to-sketch 共享飞书应用凭证，提供零配置 OAuth 授权体验
+- 企业或敏感场景可用 `FEISHU_APP_ID` / `FEISHU_APP_SECRET` 环境变量覆盖默认凭证
+- 用户 token 仅保存在本机 `~/.doc-to-sketch/token.json`，不入库
+- 自建应用凭证、`.env`、token 文件不得提交；`.env.example` 只提供模板

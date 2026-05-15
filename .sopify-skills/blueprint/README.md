@@ -9,7 +9,7 @@
 | 阶段 | Skill 重组 + 飞书集成 |
 | 定位 | AI Skill（prompt 工程）+ 轻量辅助脚本 |
 | 核心资产 | 完整的手绘视觉 DNA、叙事规划、prompt 模板（来自 fork 上游） |
-| 输入能力 | 本地文件（MD/DOCX/PDF/PPTX）已支持；飞书文档 URL 开发中 |
+| 输入能力 | 本地文件（MD/DOCX/PDF/PPTX）已支持；飞书 docx/wiki URL 已支持（首次 fetch 会自动授权） |
 | 宿主支持 | Codex CLI（当前可用）/ Claude Code（结构兼容，待端到端验证） |
 
 ## 当前目标
