@@ -150,7 +150,7 @@ For final image-page decks:
 
 ## Reference-Style Anchor
 
-For blog/article cover and body illustrations, use `assets/reference-handdrawn-article-illustration-style.png` as the active style anchor:
+For blog/article cover and body illustrations, use `assets/style-anchor-cover-21x9.png` as the active style anchor:
 
 - Near-white warm paper, not yellow.
 - No full-page border.
@@ -159,6 +159,7 @@ For blog/article cover and body illustrations, use `assets/reference-handdrawn-a
 - Medium restrained body-page titles with short pale blue underlines.
 - Fine ink-and-pencil object drawings with delicate hatching.
 - No extra text beyond the required visible Chinese text.
+- It is a cover-led 21:9 anchor; match the visual shell and tone, not the literal canvas ratio.
 
 Legacy bordered PPT references are archived outside active assets. Do not load or imitate them unless the user explicitly asks for the older bordered page style.
 

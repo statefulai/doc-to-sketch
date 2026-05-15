@@ -42,37 +42,39 @@
 
 ### 支持范围
 
-- tenant_access_token 鉴权（应用级）
-- 环境变量配置（FEISHU_APP_ID / FEISHU_APP_SECRET）
+- OAuth user_access_token 鉴权（用户级，浏览器授权 + 本地 token 存储）
+- 默认共享应用凭证 + 环境变量覆盖（FEISHU_APP_ID / FEISHU_APP_SECRET）
 - docx 文档读取（Block API）
 - blocks 分页获取（has_more + page_token）
 - block tree 递归遍历（children blocks）
 - Markdown 输出（核心 8 类 block）
-- 基础错误处理（缺配置、无权限、文档不存在、token 失效）
+- token 本地存储 + 自动刷新
+- token 过期缓冲期（提前 5 分钟触发刷新，避免请求中途失效）
+- scope 变更检测（代码更新权限需求后提示重新授权）
+- 基础错误处理（缺配置、未授权、无权限、文档不存在、token 失效、scope 不匹配）
 
 ### 明确不做
 
-- OAuth 用户登录 / 浏览器回调
-- token 本地文件持久化
 - 多维表格 (Bitable)
 - 评论 (Comments)
 - 电子表格 (Spreadsheet)
 - 画板 (Board) / 文本绘图 (Diagram) 深度支持
 - 图片二进制下载落地（仅输出 token 占位）
-- 任何内置凭证 / 关闭 SSL 校验
+- 关闭 SSL 校验
+- 提交自建应用凭证、用户 token 或 `.env`
 - retry / 指数退避（首版不做）
 
 ### 任务拆分
 
 | ID | 任务 | 依赖 | 说明 |
 |----|------|------|------|
-| T2-1 | 更新 design.md 约束 + 创建 scripts/ 骨架 | T0-5 | 确认 design.md 的实现原则/认证体验/URL 矩阵/输出契约已就绪；创建 scripts/feishu_fetch.py 骨架（argparse + main）；脚本定位为 Skill 内部执行器 |
-| T2-2 | 最小客户端：env 配置 + tenant token 获取 + request wrapper | T2-1 | 仅 urllib，无外部依赖；env 变量读取；tenant_access_token 获取；统一 HTTP 请求方法 |
-| T2-3 | 文档抓取：URL 解析 + blocks 分页 + children 递归 | T2-2 | 从 URL 提取 document_id；GET /docx/v1/documents/{id}/blocks 分页闭环；子 block 递归获取 |
+| T2-1 | 更新 design.md 约束 + 创建 scripts/ 骨架 | T0-5 | 确认 design.md 的实现原则/认证体验/URL 矩阵/输出契约已就绪；创建 scripts/feishu_fetch.py 骨架（argparse + auth/fetch 子命令）；脚本定位为 Skill 内部执行器 |
+| T2-2 | OAuth 授权：浏览器授权 + code 换 token + 本地存储 + 自动刷新 + scope 检测 | T2-1 | localhost HTTP 回调 + webbrowser.open；code → user_access_token + refresh_token；token 存储到 ~/.doc-to-sketch/token.json（含 scope 快照）；过期缓冲期（提前 5 分钟刷新）；scope 变更检测（旧 token scope 不匹配时提示重新授权） |
+| T2-3 | HTTP 客户端 + 文档抓取：URL 解析 + blocks 分页 + children 递归 | T2-2 | 统一 HTTP 请求方法（带 Authorization header）；从 URL 提取 document_id；GET /docx/v1/documents/{id}/blocks 分页闭环；子 block 递归获取 |
 | T2-4 | Markdown 渲染：核心 8 类 block 输出 | T2-3 | heading (H1-H9) / text / bullet / ordered / code / callout / divider / table；其余 block 类型输出占位注释 |
-| T2-5 | 错误模型 + E2E 验证 | T2-4 | 5 类错误覆盖；至少 1 篇真实飞书 docx 文档端到端跑通（从 Skill prompt 到 slide blueprint） |
+| T2-5 | 错误模型 + E2E 验证 | T2-4 | 6 类错误覆盖；至少 1 篇真实飞书 docx 文档端到端跑通（从 Skill prompt 到 slide blueprint） |
 
-**预估代码量**：500-700 行单文件 Python 脚本。
+**预估代码量**：600-900 行单文件 Python 脚本。
 
 ### 验收标准
 
@@ -82,17 +84,21 @@
 - 支持 blocks 分页（has_more + page_token 闭环）
 - 支持嵌套 block（如 table → table_row → table_cell → text）
 
-**错误模型验收（5 类）：**
-- 缺少环境变量 → 明确提示设置 FEISHU_APP_ID / FEISHU_APP_SECRET
-- 401 token 失效 → 提示 token 过期
-- 403 无权限 → 提示需要 docx:document:readonly 权限
+**错误模型验收（8 类）：**
+- 未授权 → fetch 自动打开浏览器授权，授权成功后继续读取文档
+- 401 token 失效 → 自动刷新；刷新失败 → 提示重新授权
+- 403 无权限 → 提示当前用户无权访问此文档
 - 404 文档不存在 → 提示 document_id 无效
-- 不支持的 URL 类型 → 提示当前只支持 docx 文档
+- 不支持的 URL 类型 → 提示当前只支持 docx/wiki 文档（docs/sheets/base 明确报错）
+- token 过期缓冲 → 提前 5 分钟触发刷新，正常流程下 401 不应出现
+- scope 不匹配 → 加载旧 token 时 scope 已变更，提示重新授权
+- app_id 不匹配 → 用户切换默认/自建应用后提示重新授权
+- token 文件损坏 → 提示重新运行 auth 授权
 
 **安全验收：**
-- 不包含任何内置凭证
+- 内置凭证仅用于展示授权页，不等于数据泄露（用户必须主动点击授权）
 - 不关闭 SSL 校验
-- 不写入本地 token 文件
+- token 仅存储在用户 home 目录（~/.doc-to-sketch/token.json），权限 600
 - 输出 Markdown 足够稳定，可直接喂给现有 Skill prompt 流程
 
 **端到端验收（E2E）：**
@@ -117,7 +123,8 @@
 ## 总计
 
 - **4 个 Phase**
-- **~19 个任务**（Phase 2 从 4 任务扩展为 5 任务）
+- **~19 个任务**
 - **~15 个文件变更**
 - 核心交付: Phase 0-2（Skill 重组 + SKILL 改造 + 飞书文档读取最小子集）
+- Phase 3: 文档与分发
 - Phase 2 预估代码量: 500-700 行单文件 Python

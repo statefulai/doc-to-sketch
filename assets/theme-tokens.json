@@ -1,5 +1,5 @@
 {
-  "name": "ian-handdrawn-ppt-v3-article-first",
+  "name": "doc-to-sketch-v3-article-first",
   "language": "zh-CN",
   "canvas": {
     "cover_ratio": "21:9",
@@ -74,7 +74,7 @@
     "dimension_policy": "report native image dimensions honestly; normalize body illustrations to 1920x1080 and cover images to 2520x1080 only when strict delivery size is requested",
     "text_fidelity_policy": "try shorter required text and regeneration first; if exact Chinese remains wrong, use deterministic text overlay on the accepted generated base image"
   },
-  "style_anchor": "assets/reference-handdrawn-article-illustration-style.png",
+  "style_anchor": "assets/style-anchor-cover-21x9.png",
   "slide_archetypes": [
     "cover-metaphor",
     "single-concept",

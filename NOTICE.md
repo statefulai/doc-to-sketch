@@ -4,7 +4,7 @@
 
 This project is forked from [ian-handdrawn-ppt](https://github.com/helloianneo/ian-handdrawn-ppt) by Ian.
 
-The core visual DNA, narrative planning references, slide archetypes, prompt patterns, the bundled reference image (`reference-handdrawn-article-illustration-style.png`), and the example output images (`examples/images/*.png`) were created by Ian and are included as foundational assets for this project under the same MIT license.
+The core visual DNA, narrative planning references, slide archetypes, prompt patterns, and the example output images (`examples/images/*.png`) were created by Ian and are included as foundational assets for this project under the same MIT license.
 
 ## Attribution
 
@@ -13,10 +13,10 @@ The core visual DNA, narrative planning references, slide archetypes, prompt pat
 
 ## What changed
 
-doc-to-sketch is building on the original Codex Skill with the following goals (in progress):
+doc-to-sketch builds on the original Codex Skill with the following changes:
 
-- Feishu/Lark document URL as an additional input source (planned, via lightweight Python script)
-- Root-level Skill structure (planned, currently in `ian-handdrawn-ppt/` subdirectory)
+- Root-level Skill structure (moved from `ian-handdrawn-ppt/` subdirectory)
+- Feishu/Lark document URL as an additional input source (via lightweight Python script)
 - Support for multiple AI hosts (Codex CLI, Claude Code)
 
 ## Maintained by

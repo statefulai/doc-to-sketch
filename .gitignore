@@ -1,5 +1,6 @@
 .DS_Store
 __pycache__/
+tests/__pycache__/
 *.py[cod]
 
 # Environment variables (never commit)
@@ -9,10 +10,13 @@ __pycache__/
 generated/
 outputs/
 tmp/
+.tmp/
 
 # Editor/project noise
 .idea/
 .vscode/
+
+output
 
 # Sopify runtime state (not versioned)
 .sopify-skills/state/
