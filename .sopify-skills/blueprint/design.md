@@ -16,9 +16,15 @@ doc-to-sketch (Skill)
 │   ├── theme-tokens.json
 │   └── style-anchor-cover-21x9.png
 ├── scripts/
-│   └── feishu_fetch.py         ← 飞书文档 → Markdown 轻量脚本
+│   ├── feishu_fetch.py         ← 飞书文档 → Markdown 轻量脚本
+│   └── generate_image.sh       ← 可选图像生成 fallback
+├── tests/
+│   └── test_feishu_fetch.py
 ├── examples/
-├── package.json                ← 可选，仅用于 npx skills add 分发
+│   ├── images/
+│   └── prompts.md
+├── .env.example
+├── package.json                ← 未创建，待 P3-1 完成后启用
 ├── README.md
 ├── LICENSE
 └── NOTICE.md
