@@ -8,8 +8,6 @@
 >
 > AI Skill + prompt 资产 | 21:9 封面 | 16:9 正文配图 | PNG 输出 | 飞书文档输入
 
-> **📌 Fork 自 [ian-handdrawn-ppt](https://github.com/helloianneo/ian-handdrawn-ppt) by Ian。**
-
 ---
 
 ## 这个仓库是什么
