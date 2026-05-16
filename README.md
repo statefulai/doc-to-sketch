@@ -10,9 +10,17 @@ doc-to-sketch 是一个把文档内容转换为**中文手绘技术解释图**�
 
 主要产出是 PNG 页面图（无生图能力时先输出 blueprint + prompts）。支持 Markdown、DOCX、PDF、PPTX、纯文本和飞书文档 URL 作为输入。
 
----
+## 示例效果
 
-## 开始使用
+以下为 doc-to-sketch 正文配图实际输出（16:9）：
+
+![三条路径都能用](examples/images/page-01-three-paths.png)
+![丢文档就出图](examples/images/page-02-workflow.png)
+![飞书链接直接读](examples/images/page-03-feishu.png)
+
+视觉特征：近白纸底、无边框、细手绘线条、淡色标记、中央图小而精、大量留白、中文短少可检查。
+
+## 快速开始
 
 ### 安装
 
@@ -30,50 +38,18 @@ cd ~/.agents/skills/doc-to-sketch && bash scripts/doctor.sh
 
 ### 按你的路径开始
 
-| 路径 | 适用宿主 | 第一句话 |
-|------|----------|----------|
-| 🎨 Path A | Codex、Claude Code（原生出图） | `Use $doc-to-sketch 把这篇文章做成 1 张封面图 + 3 张正文配图。` |
-| 🔧 Path B | Cursor、Cline 等（配置了 IMAGE_API） | `Use $doc-to-sketch 把这篇文章做成图文 deck，用 fallback 生成图片。` |
-| 📋 Path C | 所有支持 Skills 的 agent | `Use $doc-to-sketch 帮我规划一套中文手绘技术图的 blueprint。` |
+![路径选择](assets/path-decision-tree.svg)
 
-- **Path A**：宿主有原生图像生成，直接输出 PNG 页面图 + contact sheet。
-- **Path B**：宿主没有原生生图，但配置了 `IMAGE_API_KEY` + `IMAGE_API_URL`（见 `.env.example`），skill 会询问后通过外部 API 生成。
-- **Path C**：无生图能力也无 API 配置，输出完整 blueprint + 每页可直接粘贴到 ChatGPT/Midjourney 的 prompt 文件。
-
-### 更多 prompt 示例
-
-```text
-# 课程课件
-Use $doc-to-sketch 把这份课程大纲整理成 8 页中文手绘技术课件图。
-面向有基础的新手，每页一个核心概念。
-
-# 只规划，不生图
-Use $doc-to-sketch 先不要生图。
-请把这篇内容规划成一套 10 页左右的中文手绘技术图 deck。
-每页给出标题、主旨、版式 archetype、可见文字和图像 brief。
-
-# 飞书文档
-Use $doc-to-sketch 把这篇飞书文档做成 1 张封面图 + 4 张正文配图。
-https://xxx.feishu.cn/docx/xxxxx
-```
+- **Path A** 直接出图 → `Use $doc-to-sketch 把这篇文章做成 1 张封面图 + 3 张正文配图。`
+  宿主有原生图像生成（Codex、Claude Code），直接输出 PNG 页面图 + contact sheet。
+- **Path B** 在线出图 → `Use $doc-to-sketch 把这篇文章做成图文 deck，用 fallback 生成图片。`
+  宿主没有原生生图，但配置了 `IMAGE_API_KEY` + `IMAGE_API_URL`（见 `.env.example`），skill 会询问后通过外部 API 生成。
+- **Path C** 先出规划 → `Use $doc-to-sketch 帮我规划一套中文手绘技术图的 blueprint。`
+  无生图能力也无 API 配置，输出完整 blueprint + 每页可直接粘贴到 ChatGPT/Midjourney 的 prompt 文件。
 
 完整示例见 [examples/prompts.md](examples/prompts.md)。
 
----
-
-## 示例效果
-
-以下为 doc-to-sketch 正文配图实际输出（16:9）：
-
-![三条路径都能用](examples/images/page-01-three-paths.png)
-![丢文档就出图](examples/images/page-02-workflow.png)
-![飞书链接直接读](examples/images/page-03-feishu.png)
-
-视觉特征：近白纸底、无边框、细手绘线条、淡色标记、中央图小而精、大量留白、中文短少可检查。
-
----
-
-## 输入与边界
+## 输入与输出
 
 **支持的输入**：Markdown、DOCX、PDF、PPTX、纯文本、飞书 docx/wiki URL
 
@@ -88,9 +64,19 @@ https://xxx.feishu.cn/docx/xxxxx
 - AI 图像模型可能出现错字、风格漂移，不要默认第一张就是终稿
 - PPTX/PDF 可以作为输入读取，但不是输出格式
 
----
+## 特色功能
 
-## 进阶配置
+### 飞书文档读取
+
+首次使用飞书 URL 时，skill 会自动打开浏览器完成 OAuth 授权。也可以提前预授权：
+
+```bash
+python3 scripts/feishu_fetch.py auth
+```
+
+默认使用共享飞书应用完成零配置授权。权限范围：`docx:document:readonly`、`wiki:wiki:readonly`、`offline_access`（仅用于刷新 token）。不申请任何写权限。token 仅保存在本机 `~/.doc-to-sketch/token.json`，不上传。
+
+企业或敏感场景建议使用自建飞书应用，详见 `.env.example`。
 
 ### 图像生成 fallback（Path B）
 
@@ -110,17 +96,7 @@ scripts/generate_image.sh --prompt-file prompt.txt --size 1920x1080 --output-dir
 
 > ⚠️ prompt 内容会发送到你配置的第三方服务。
 
-### 飞书文档读取
-
-首次使用飞书 URL 时，skill 会自动打开浏览器完成 OAuth 授权。也可以提前预授权：
-
-```bash
-python3 scripts/feishu_fetch.py auth
-```
-
-默认使用共享飞书应用完成零配置授权。权限范围：`docx:document:readonly`、`wiki:wiki:readonly`、`offline_access`（仅用于刷新 token）。不申请任何写权限。token 仅保存在本机 `~/.doc-to-sketch/token.json`，不上传。
-
-企业或敏感场景建议使用自建飞书应用，详见 `.env.example`。
+## 参考
 
 ### 备选安装方式
 
@@ -152,8 +128,6 @@ ln -s "$(pwd)" ~/.claude/skills/doc-to-sketch
 ├── .env.example                ← 环境变量模板
 └── README.md
 ```
-
----
 
 ## 致谢
 
