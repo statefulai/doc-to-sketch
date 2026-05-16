@@ -1,46 +1,36 @@
 # doc-to-sketch Blueprint
 
-> Skill-first：把文档内容转换为中文手绘技术解释风格 PPT-style 页面图
-
-## 项目状态
+## 状态
 
 | 维度 | 当前状态 |
 |------|----------|
-| 阶段 | Phase 0-4 基本完成，仅 P3-1 package.json 延期 |
+| 阶段 | P0-P5 已落地；当前无活动 plan，已完成方案已归档 |
 | 定位 | AI Skill（prompt 工程）+ 轻量辅助脚本 |
-| 核心资产 | 完整的手绘视觉 DNA、叙事规划、prompt 模板（来自 fork 上游） |
-| 输入能力 | 本地文件（MD/DOCX/PDF/PPTX）已支持；飞书 docx/wiki URL 已支持（首次 fetch 会自动授权） |
-| 宿主支持 | Codex CLI（当前可用）/ Claude Code（结构兼容，待端到端验证） |
+| 输入能力 | Markdown、DOCX、PDF、PPTX、纯文本、飞书 docx/wiki URL |
+| 输出能力 | Path A 原生生图；Path B API fallback；Path C blueprint + prompts |
+| 分发现状 | 主安装命令为 `npx skills add statefulai/doc-to-sketch`；GitHub 源安装仍会包含 git-tracked 内部资产，`package.json` 仅约束 npm pack/publish |
+
+## 维护方式
+
+- 长期约定写入 `project.md`、`blueprint/background.md`、`blueprint/design.md`
+- 未完成长期项与明确延后项写入 `blueprint/tasks.md`
+- 已完成方案归档至本地（不入 git）
+- `plan/` 只保留当前活动方案
 
 ## 当前目标
 
-1. 将 fork 得到的单体 Codex Skill 重组为根级、可分发的通用 Skill
-2. 增加飞书文档 URL 输入能力（轻量脚本辅助）
-3. 为多宿主安装和使用打基础
-4. 保留原有中文手绘技术解释图的视觉与叙事优势
+1. 保持多宿主安装与使用路径清晰可用
+2. 继续保留飞书 URL -> Markdown -> 出图/规划链路
+3. 保持中文手绘技术解释图的视觉与叙事优势
 
-## 设计原则
+## 当前焦点
 
-- **Skill 为主**：核心价值在 prompt 资产和 workflow，不是代码框架
-- **脚本辅助**：飞书获取等能力用轻量脚本实现，由 AI agent 调用
-- **不做脚手架**：不引入重型 TS 项目、不搞 adapter 框架
+- 验证 Claude Code 端到端原生生图链路
+- 明确 GitHub 源安装下内部资产随仓库分发的长期处理策略
+- 保持 README、SKILL、辅助脚本三者口径一致
 
-## 非目标
+## 深入阅读
 
-- 不做可编辑 PPTX 生成器
-- 不做复杂后端
-- 不做重型 adapter 框架
-- 不做统一内容中间层
-- 不做独立的飞书数据访问工具（脚本是 Skill 内部执行器，不是用户直接使用的工具）
-
-## 长期方向
-
-- 支持更多在线文档源（Notion 等）
-- 探索更多 AI 宿主绑定
-- 保持轻量分发（git clone / npx skills add）
-
-## 阅读入口
-
-- [background.md](background.md) — 项目背景与上下文
-- [design.md](design.md) — 技术设计
-- [tasks.md](tasks.md) — 全局任务追踪
+- [background.md](background.md) — 项目背景与长期上下文
+- [design.md](design.md) — 当前技术设计与分发约束
+- [tasks.md](tasks.md) — 未完成长期项与延后项
