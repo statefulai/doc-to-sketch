@@ -22,3 +22,4 @@ output
 .sopify-skills/state/
 .sopify-skills/replay/
 .sopify-skills/plan/_registry.yaml
+.sopify-skills/history/

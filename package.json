@@ -1,0 +1,41 @@
+{
+  "name": "@statefulai/doc-to-sketch",
+  "version": "1.0.0",
+  "description": "Turn documents into Chinese handdrawn technical PPT-style page images. Supports Markdown, PDF, DOCX, Feishu URLs, and more.",
+  "main": "SKILL.md",
+  "keywords": [
+    "skill",
+    "ppt",
+    "slides",
+    "handdrawn",
+    "chinese",
+    "technical-illustration",
+    "feishu",
+    "document-to-image",
+    "claude-code",
+    "codex"
+  ],
+  "author": "statefulai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/statefulai/doc-to-sketch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/statefulai/doc-to-sketch/issues"
+  },
+  "homepage": "https://github.com/statefulai/doc-to-sketch#readme",
+  "files": [
+    "SKILL.md",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    ".env.example",
+    "references/",
+    "scripts/feishu_fetch.py",
+    "scripts/generate_image.sh",
+    "scripts/doctor.sh",
+    "assets/",
+    "examples/prompts.md"
+  ]
+}

@@ -2,52 +2,50 @@
 
 ## 架构概览
 
-```
+```text
 doc-to-sketch (Skill)
-├── SKILL.md                    ← 核心 Skill 定义
-├── references/                 ← prompt 资产
-│   ├── intake.md               (扩展：增加飞书 URL 作为输入类型)
-│   ├── narrative-planning.md
-│   ├── slide-archetypes.md
-│   ├── visual-dna-v6.md
-│   ├── output-quality.md
-│   └── prompt-patterns.md
+├── SKILL.md                    ← 核心工作流与 Path A/B/C 输出契约
+├── references/                 ← prompt 资产（intake / narrative / archetypes / visual DNA / quality）
 ├── assets/
 │   ├── theme-tokens.json
 │   └── style-anchor-cover-21x9.png
 ├── scripts/
-│   ├── feishu_fetch.py         ← 飞书文档 → Markdown 轻量脚本
-│   └── generate_image.sh       ← 可选图像生成 fallback
+│   ├── feishu_fetch.py         ← 飞书文档 URL -> Markdown
+│   ├── generate_image.sh       ← Path B 外部 API fallback
+│   └── doctor.sh               ← 配置自检 + 保守建议
 ├── tests/
 │   └── test_feishu_fetch.py
 ├── examples/
 │   ├── images/
 │   └── prompts.md
 ├── .env.example
-├── package.json                ← 未创建，待 P3-1 完成后启用
+├── package.json                ← npm 元数据与 pack 白名单
 ├── README.md
 ├── LICENSE
 └── NOTICE.md
 ```
 
-**核心思路**：Skill workflow 中增加一个 ingest 分支 —— 如果输入是飞书 URL，先调用 `scripts/feishu_fetch.py` 获取 Markdown，然后走正常的 Skill 流水线。
+## 核心流程
 
-**架构口径**：飞书内容获取基于官方 OpenAPI（docx / Block API）+ 自建 `feishu_fetch.py`，v1 不引入任何外部运行时依赖。
+1. **Ingest**
+   - 本地文件 / 纯文本直接读取
+   - 飞书 docx/wiki URL 调用 `scripts/feishu_fetch.py fetch "<url>"`
+2. **Planning**
+   - intake -> narrative -> archetype -> visual DNA
+3. **Output routing**
+   - **Path A**: 宿主具备原生图像生成，直接输出 PNG 页面图
+   - **Path B**: 宿主无原生图像生成，但用户配置了 `IMAGE_API_KEY` + `IMAGE_API_URL`；经用户确认后调用 `scripts/generate_image.sh`
+   - **Path C**: 无生图能力时输出 blueprint + ready-to-use prompts
 
 ## 飞书获取脚本设计
 
-### scripts/feishu_fetch.py
+### `scripts/feishu_fetch.py`
 
-**功能**：给定飞书文档 URL → 输出 Markdown 文本
-
-**鉴权**：OAuth 2.0 user_access_token 模式
-- 内置飞书应用凭证（Skill 共享应用），零配置即可使用
-- 可选覆盖：环境变量 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`
-- 首次运行 `auth` 子命令 → 浏览器授权 → 本地存储 token
-- 后续自动加载 token，过期自动刷新
-- token 过期缓冲期：提前 5 分钟触发刷新，避免请求中途 token 失效
-- scope 变更检测：代码更新权限需求后，加载旧 token 时自动比对 scope 并提示重新授权
-- 以用户身份读取文档，无需将文档分享给应用
+- 基于飞书 OpenAPI 的轻量执行器
+- 使用 OAuth 2.0 `user_access_token`
+- 默认共享应用凭证，可用 `FEISHU_APP_ID` / `FEISHU_APP_SECRET` 覆盖
+- 首次授权自动打开浏览器；token 存在本机 `~/.doc-to-sketch/token.json`
+- 作用是把飞书文档转换为稳定 Markdown，供 skill 主流程继续消费
 
 **API 调用链**：
 ```
@@ -74,56 +72,32 @@ doc-to-sketch (Skill)
 | callout | `> ` 引用块 |
 | divider | `---` |
 
-**调用方式**（由 AI agent 在 Skill workflow 内部自动执行，用户不需要手动操作）：
-```bash
-# AI agent 内部调用（用户不可见）
-python3 scripts/feishu_fetch.py fetch "https://xxx.feishu.cn/docx/xxxxx"
-python3 scripts/feishu_fetch.py fetch "https://xxx.feishu.cn/wiki/xxxxx"
-```
+### `scripts/generate_image.sh`
 
-**授权行为**：
-```bash
-# fetch 首次读取且无有效 token 时会自动打开浏览器授权
-python3 scripts/feishu_fetch.py fetch "https://xxx.feishu.cn/docx/xxxxx"
+- 仅用于 Path B
+- 使用 `IMAGE_API_KEY`、`IMAGE_API_URL`、`IMAGE_MODEL`
+- prompt 会发送到用户配置的第三方服务
+- 不是默认主链路，也不替代原生生图
 
-# 可选：提前浏览器授权
-python3 scripts/feishu_fetch.py auth
+### `scripts/doctor.sh`
 
-# 高级：自定义飞书应用凭证（可选）
-# export FEISHU_APP_ID=xxx
-# export FEISHU_APP_SECRET=xxx
-# 自建应用需配置回调地址: http://localhost:19823/callback
-```
+- 自检配置状态，不修改环境
+- 能确认的只检查配置与依赖
+- 无法可靠判断宿主原生生图能力时，只给保守建议路径
 
-**依赖**：仅 Python 标准库（urllib + json + http.server + webbrowser），无外部依赖
+## 分发与目录约定
 
-## SKILL.md 扩展
-
-在 workflow Step 1 (Ingest material) 中增加飞书分支：
-
-```
-1. Ingest material
-   - If input is a Feishu/Lark document URL:
-     1. Run `python3 scripts/feishu_fetch.py fetch "<url>"` to get Markdown
-     2. Parse the Markdown output as the source material
-   - If input is a local file: (existing logic)
-   - If input is plain text/Markdown: (existing logic)
-```
-
-## 多宿主分发
-
-| 宿主 | 安装方式 | Skill 入口 |
-|------|----------|-----------|
-| Codex CLI | `cp -R` 或 `ln -s` 到 `$CODEX_HOME/skills/` | SKILL.md |
-| Claude Code | clone + symlink；`npx skills add` 待 package.json 完成后启用 | SKILL.md |
-| 手动 | `git clone` + 按需使用 | SKILL.md |
-
-所有宿主共用同一个 SKILL.md，因为 Skill 格式（YAML frontmatter + Markdown workflow）在 Codex 和 Claude Code 间兼容。
+- 主安装命令：`npx skills add statefulai/doc-to-sketch`
+- 备选安装：`git clone` + 手动 symlink
+- `package.json` 的 `files` 仅对 npm pack/publish 生效
+- GitHub 源安装仍以 git-tracked 文件为准，因此 `.sopify-skills/` 等内部资产不会被 `package.json` 隔离
+- `.sopify-skills/` 是源码仓内部知识库，不是 skill 运行时依赖
 
 ## 技术选型
 
 | 维度 | 选择 | 原因 |
 |------|------|------|
-| 飞书脚本语言 | Python | 零依赖可行，所有宿主环境都有 Python |
-| HTTP | urllib (标准库) | 无外部依赖，仅用标准库 |
-| 分发 | npm package.json (可选) | 仅用于 `npx skills add` 路径 |
+| Skill 入口 | YAML frontmatter + Markdown | Codex / Claude Code / 通用 skills 兼容 |
+| 飞书脚本语言 | Python 3 标准库 | 零外部依赖，跨宿主可用 |
+| fallback API | shell + curl + python3 | 保持轻量，避免引入额外运行时 |
+| 分发元数据 | `package.json` | 元数据、npm pack 白名单、后续发布预留 |
