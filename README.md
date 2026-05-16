@@ -63,21 +63,13 @@ https://xxx.feishu.cn/docx/xxxxx
 
 ## 示例效果
 
-下面是原项目 [ian-handdrawn-ppt](https://github.com/helloianneo/ian-handdrawn-ppt) 的示例输出：
+以下为 doc-to-sketch 正文配图实际输出（16:9）：
 
-| 封面（21:9） | 正文页（16:9） |
-|:---:|:---:|
-| ![封面](examples/images/cover-automation-boundary.png) | ![正文](examples/images/page-01-reading-two-things.png) |
+![三条路径都能用](examples/images/page-01-three-paths.png)
+![丢文档就出图](examples/images/page-02-workflow.png)
+![飞书链接直接读](examples/images/page-03-feishu.png)
 
 视觉特征：近白纸底、无边框、细手绘线条、淡色标记、中央图小而精、大量留白、中文短少可检查。
-
-<details>
-<summary>更多示例</summary>
-
-![自动化该放哪里](examples/images/page-02-where-to-automate.png)
-![三问判断法](examples/images/page-03-three-question-method.png)
-
-</details>
 
 ---
 
