@@ -105,6 +105,16 @@ Check:
 - If exact text fails, reduce text and regenerate.
 - If exact text remains wrong after simplification, use deterministic text overlay on the accepted generated base image, then re-check readability, alignment, and style consistency before delivery.
 
+## Size Gate
+
+Check:
+
+- Web delivery (README, blog, docs): each image ≤500KB after optimization.
+- Deck / print delivery: no mandatory size constraint, but report actual file sizes.
+- If images exceed the web threshold, offer `scripts/optimize_output.py` to convert PNG to JPEG.
+- JPEG quality 85 is the default; visually indistinguishable for AI-generated illustrations.
+- Do not auto-convert without user confirmation — PNG is the lossless default.
+
 ## Contact Sheet Gate
 
 For multiple images, make a contact sheet and inspect it before delivery:

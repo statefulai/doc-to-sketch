@@ -90,6 +90,7 @@ Do not use legacy bordered PPT reference images unless the user explicitly asks 
        1. "Paste any prompt into ChatGPT/Midjourney/DALL-E to generate that page."
        2. "Or configure `IMAGE_API_KEY` and `IMAGE_API_URL` (see `.env.example`), then re-run this skill to generate all pages automatically."
        3. "Or switch to Codex / Claude Code for native one-step generation."
+   - **Post-processing — size optimization**: After generation, check file sizes. If the output is intended for web embedding (README, blog, docs) and images exceed 500KB, offer to run `scripts/optimize_output.py <output-dir> --keep-originals` to convert PNG to JPEG (quality 85, typically 85-95% size reduction). Do not auto-convert — confirm with the user first. Always use `--keep-originals` unless the user explicitly asks to remove originals. PNG remains the default lossless output; JPEG is an explicit optimization step.
    - For explicit planning-only requests (user says "先规划" / "不要生图"), always deliver blueprint regardless of capability.
 
 7. **Verify**
