@@ -135,3 +135,16 @@ Mention:
 - Major assumptions
 - Verification performed
 - Remaining risks
+
+## Cross-audit checklist for unattended outputs
+
+The independent reviewer reads each `sketch-receipt.jsonl` row and opens its `output_file`. For **each image**, check and record:
+
+- Whether every item in `required_text` is present and exact.
+- Whether there is any extra, garbled, or unreadable text.
+- Whether the visual style matches the deck's style anchor.
+- Whether the image ratio and actual pixel dimensions fit the page role and receipt `size`.
+- Whether any decorative people appear when the host forbids them.
+- Whether the file's SHA-256 matches `image_sha256` in the receipt (and its byte count matches `bytes`).
+
+Give each image an explicit `accepted` or `rejected` conclusion with reasons. Do not use any rejected image. Until this independent review is complete, `pending_cross_audit` images remain **待交叉审计**.

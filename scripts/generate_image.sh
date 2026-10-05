@@ -28,6 +28,8 @@ OUTPUT_DIR="."
 PROMPT=""
 PROMPT_FILE=""
 MODEL="${IMAGE_MODEL:-gpt-image-2}"
+REQUIRED_TEXT_FILE=""
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 usage() {
   cat <<EOF
@@ -38,12 +40,16 @@ usage() {
   --prompt, -p       直接传入 prompt 文本
   --size, -s         图片尺寸（默认: 2520x1080）
   --output-dir, -o   保存目录（默认: 当前目录）
+  --required-text-file  每页必需文字清单（JSON 字符串数组或每行一条）
   --help, -h         显示帮助
 
 环境变量:
   IMAGE_API_KEY      API 密钥（必须，含鉴权前缀，如 "Bearer sk-xxx" 或 "sk-xxx"）
   IMAGE_API_URL      API 端点（必须）
   IMAGE_MODEL        模型名称（默认: gpt-image-2）
+  DOC_TO_SKETCH_UNATTENDED  设为 1 且同时设置正整数上限时启用无人值守模式
+  DOC_TO_SKETCH_MAX_IMAGES  每个任务最多生成的图片张数
+  DOC_TO_SKETCH_RUN_DIR     可选的任务级计数目录（默认: 输出目录）
 
 示例:
   # 从文件读 prompt
@@ -62,6 +68,7 @@ while [[ $# -gt 0 ]]; do
     --prompt|-p)      PROMPT="$2"; shift 2 ;;
     --size|-s)        SIZE="$2"; shift 2 ;;
     --output-dir|-o)  OUTPUT_DIR="$2"; shift 2 ;;
+    --required-text-file) REQUIRED_TEXT_FILE="$2"; shift 2 ;;
     --help|-h)        usage ;;
     *) echo "未知参数: $1"; usage ;;
   esac
@@ -103,13 +110,46 @@ for cmd in curl python3; do
   fi
 done
 
+if [[ -n "$REQUIRED_TEXT_FILE" ]]; then
+  python3 "$SCRIPT_DIR/image_audit.py" validate-text "$REQUIRED_TEXT_FILE"
+fi
+
+MODE="attended"
+if [[ "${DOC_TO_SKETCH_UNATTENDED:-}" == "1" && -n "${DOC_TO_SKETCH_MAX_IMAGES:-}" ]]; then
+  if [[ ! "$DOC_TO_SKETCH_MAX_IMAGES" =~ ^[1-9][0-9]*$ ]]; then
+    echo "错误: DOC_TO_SKETCH_MAX_IMAGES 必须是正整数" >&2
+    exit 1
+  fi
+  MODE="unattended"
+fi
+
 # ---- 准备输出 ----
 mkdir -p "$OUTPUT_DIR"
+COUNT_FILE=""
+if [[ "$MODE" == "unattended" ]]; then
+  COUNT_FILE="${DOC_TO_SKETCH_RUN_DIR:-$OUTPUT_DIR}/.doc-to-sketch-count"
+  python3 "$SCRIPT_DIR/image_audit.py" reserve "$COUNT_FILE" "$DOC_TO_SKETCH_MAX_IMAGES"
+fi
+
+SUCCESS=0
+FILEPATH=""
+cleanup() {
+  if [[ "$SUCCESS" -eq 0 ]]; then
+    if [[ -n "$FILEPATH" ]]; then
+      rm -f "$FILEPATH"
+    fi
+    if [[ -n "$COUNT_FILE" ]]; then
+      python3 "$SCRIPT_DIR/image_audit.py" release "$COUNT_FILE" || true
+    fi
+  fi
+  rm -f "${TMPFILE:-}"
+}
+trap cleanup EXIT
 
 # 文件名：prompt 前 20 字符 + 时间戳
-SAFE_PROMPT=$(echo "$PROMPT" | tr -cs '[:alnum:]' '_' | head -c 20 | sed 's/_$//')
+SAFE_PROMPT=$(python3 -c 'import re, sys; print(re.sub(r"_$", "", re.sub(r"[^a-zA-Z0-9]+", "_", sys.argv[1])[:20]))' "$PROMPT")
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-FILENAME="${SAFE_PROMPT}_${TIMESTAMP}.png"
+FILENAME="${SAFE_PROMPT}_${TIMESTAMP}_$$.png"
 FILEPATH="${OUTPUT_DIR}/${FILENAME}"
 
 echo "⏳ 正在生成图片..."
@@ -119,7 +159,6 @@ echo "   输出:   ${FILEPATH}"
 
 # ---- 调用 API ----
 TMPFILE=$(mktemp "${TMPDIR:-/tmp}/gen_image_resp.XXXXXX")
-trap 'rm -f "$TMPFILE"' EXIT
 
 # 用 python3 构造 JSON，避免 shell 转义问题
 JSON_PAYLOAD=$(python3 -c "
@@ -192,6 +231,12 @@ with open(out_path, 'wb') as f:
 size_mb = len(img_bytes) / (1024 * 1024)
 print(f'✅ 图片已保存: {out_path} ({size_mb:.1f} MB)')
 " "$TMPFILE" "$FILEPATH"
+
+python3 "$SCRIPT_DIR/image_audit.py" receipt \
+  --output-file "$FILEPATH" --output-dir "$OUTPUT_DIR" \
+  --mode "$MODE" --model "$MODEL" --size "$SIZE" --prompt "$PROMPT" \
+  --required-text-file "$REQUIRED_TEXT_FILE"
+SUCCESS=1
 
 FILE_SIZE=$(du -h "$FILEPATH" 2>/dev/null | cut -f1)
 echo "   文件大小: ${FILE_SIZE}"
