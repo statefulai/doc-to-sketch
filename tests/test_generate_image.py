@@ -61,6 +61,7 @@ class GenerateImageTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.output = self.root / "output"
+        self.run_dir = self.root / "run"
         self.env = os.environ.copy()
         for name in ("DOC_TO_SKETCH_UNATTENDED", "DOC_TO_SKETCH_MAX_IMAGES", "DOC_TO_SKETCH_RUN_DIR"):
             self.env.pop(name, None)
@@ -83,15 +84,39 @@ class GenerateImageTests(unittest.TestCase):
                 (self.output / "sketch-receipt.jsonl").read_text().splitlines()]
 
     def test_unattended_cap_rejects_second_call(self):
-        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1"})
+        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1",
+                         "DOC_TO_SKETCH_RUN_DIR": str(self.run_dir)})
         first = self.generate()
         second = self.generate()
         self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
         self.assertNotEqual(second.returncode, 0)
         self.assertIn("上限", second.stderr)
         self.assertEqual(ImageStub.requests, 1)
-        self.assertEqual((self.output / ".doc-to-sketch-count").read_text().strip(), "1")
+        self.assertEqual((self.run_dir / ".doc-to-sketch-count").read_text().strip(), "1")
         self.assertEqual(len(self.receipts()), 1)
+
+    def test_unattended_requires_run_dir(self):
+        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1"})
+        result = self.generate()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("DOC_TO_SKETCH_RUN_DIR", result.stderr)
+        self.assertEqual(ImageStub.requests, 0)
+        self.assertFalse(self.output.exists())
+
+    def test_shared_run_dir_caps_different_output_dirs(self):
+        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1",
+                         "DOC_TO_SKETCH_RUN_DIR": str(self.run_dir)})
+        first_output = self.output
+        first = self.generate()
+        self.output = self.root / "another-output"
+        second = self.generate()
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        self.assertNotEqual(second.returncode, 0)
+        self.assertIn("上限", second.stderr)
+        self.assertEqual(ImageStub.requests, 1)
+        self.assertEqual((self.run_dir / ".doc-to-sketch-count").read_text().strip(), "1")
+        self.assertEqual(len(list(first_output.glob("*.png"))), 1)
+        self.assertFalse(list(self.output.glob("*.png")))
 
     def test_attended_mode_does_not_count(self):
         self.env["DOC_TO_SKETCH_MAX_IMAGES"] = "1"
@@ -103,7 +128,8 @@ class GenerateImageTests(unittest.TestCase):
     def test_receipt_fields_and_hashes(self):
         required = self.root / "required.json"
         required.write_text('["标题", "准确文字"]', encoding="utf-8")
-        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "2"})
+        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "2",
+                         "DOC_TO_SKETCH_RUN_DIR": str(self.run_dir)})
         result = self.generate("准确 prompt", "--required-text-file", str(required))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         row = self.receipts()[0]
@@ -118,15 +144,18 @@ class GenerateImageTests(unittest.TestCase):
         self.assertEqual(row["prompt_sha256"], hashlib.sha256("准确 prompt".encode()).hexdigest())
         self.assertEqual(row["image_sha256"], hashlib.sha256(PNG).hexdigest())
         self.assertEqual(row["bytes"], len(PNG))
-        self.assertEqual(Path(row["output_file"]).read_bytes(), PNG)
+        self.assertFalse(Path(row["output_file"]).is_absolute())
+        self.assertEqual(Path(row["output_file"]).name, row["output_file"])
+        self.assertEqual((self.output / row["output_file"]).read_bytes(), PNG)
         self.assertEqual(row["required_text"], ["标题", "准确文字"])
         self.assertEqual(row["review_status"], "pending_cross_audit")
 
     def test_failed_image_releases_slot(self):
-        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1"})
+        self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1",
+                         "DOC_TO_SKETCH_RUN_DIR": str(self.run_dir)})
         failed = self.generate("fail")
         self.assertNotEqual(failed.returncode, 0)
-        self.assertEqual((self.output / ".doc-to-sketch-count").read_text().strip(), "0")
+        self.assertEqual((self.run_dir / ".doc-to-sketch-count").read_text().strip(), "0")
         self.assertEqual(self.generate().returncode, 0)
 
 

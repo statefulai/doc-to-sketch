@@ -98,9 +98,9 @@ scripts/generate_image.sh --prompt-file prompt.txt --size 1920x1080 --output-dir
 
 ### 无人值守模式（可选）
 
-运营方可在宿主环境预先授权并设定单次任务上限：同时设置 `DOC_TO_SKETCH_UNATTENDED=1` 和正整数 `DOC_TO_SKETCH_MAX_IMAGES`。Agent 不得自行设置这两个变量。缺少任一变量时维持有人值守行为，Path B 调用前仍需明确确认。无人值守时，Path A/B 仅生成优先级最高且不超过上限的页面，其余页面交付 prompt；`DOC_TO_SKETCH_RUN_DIR` 可指定任务共用的计数目录（默认输出目录）。
+运营方可在宿主环境预先授权并设定单次任务上限：同时设置 `DOC_TO_SKETCH_UNATTENDED=1`、正整数 `DOC_TO_SKETCH_MAX_IMAGES` 和任务共用的 `DOC_TO_SKETCH_RUN_DIR`。Agent 不得自行设置这三个变量。缺少前两个变量之一时维持有人值守行为，Path B 调用前仍需明确确认；已启用无人值守却缺少 `DOC_TO_SKETCH_RUN_DIR` 时拒绝生图。Path A/B 共用该目录下的计数文件，即使图片写入不同输出目录也受同一上限约束；超出上限的页面交付 prompt。
 
-Path B 每次成功出图都会在输出目录追加 `sketch-receipt.jsonl`；调用时可用 `--required-text-file` 传入每页必需文字清单（JSON 字符串数组或每行一条）。回执包含图片哈希及 `pending_cross_audit` 状态。Path A 也需记录同格式回执。无人值守图片必须经过逐张交叉审计，审计通过前均为“待交叉审计”。
+Path B 每次成功出图都会在输出目录追加 `sketch-receipt.jsonl`；调用时可用 `--required-text-file` 传入每页必需文字清单（JSON 字符串数组或每行一条）。回执中的 `output_file` 相对输出目录，另含图片哈希及 `pending_cross_audit` 状态。Path A 也需记录同格式回执。无人值守图片必须经过逐张交叉审计，审计通过前均为“待交叉审计”。
 
 ## 参考
 

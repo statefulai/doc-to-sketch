@@ -48,6 +48,7 @@ def required_text(path: str) -> list[str]:
 def write_receipt(args: argparse.Namespace) -> None:
     image = Path(args.output_file)
     image_bytes = image.read_bytes()
+    relative_image = image.resolve().relative_to(Path(args.output_dir).resolve())
     prompt = Path(args.prompt_file).read_text(encoding="utf-8") if args.prompt_file else args.prompt
     receipt = {
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -55,7 +56,7 @@ def write_receipt(args: argparse.Namespace) -> None:
         "model": args.model,
         "size": args.size,
         "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
-        "output_file": str(image.resolve()),
+        "output_file": str(relative_image),
         "image_sha256": hashlib.sha256(image_bytes).hexdigest(),
         "bytes": len(image_bytes),
         "required_text": required_text(args.required_text_file),

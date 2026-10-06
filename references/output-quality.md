@@ -138,7 +138,7 @@ Mention:
 
 ## Cross-audit checklist for unattended outputs
 
-The independent reviewer reads each `sketch-receipt.jsonl` row and opens its `output_file`. For **each image**, check and record:
+The independent reviewer reads each `sketch-receipt.jsonl` row, resolves its relative `output_file` against the directory containing that receipt, and opens the resulting image. For **each image**, check and record:
 
 - Whether every item in `required_text` is present and exact.
 - Whether there is any extra, garbled, or unreadable text.

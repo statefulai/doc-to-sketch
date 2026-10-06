@@ -49,7 +49,7 @@ usage() {
   IMAGE_MODEL        模型名称（默认: gpt-image-2）
   DOC_TO_SKETCH_UNATTENDED  设为 1 且同时设置正整数上限时启用无人值守模式
   DOC_TO_SKETCH_MAX_IMAGES  每个任务最多生成的图片张数
-  DOC_TO_SKETCH_RUN_DIR     可选的任务级计数目录（默认: 输出目录）
+  DOC_TO_SKETCH_RUN_DIR     无人值守模式必需的任务级计数目录（由运营方设置）
 
 示例:
   # 从文件读 prompt
@@ -120,6 +120,10 @@ if [[ "${DOC_TO_SKETCH_UNATTENDED:-}" == "1" && -n "${DOC_TO_SKETCH_MAX_IMAGES:-
     echo "错误: DOC_TO_SKETCH_MAX_IMAGES 必须是正整数" >&2
     exit 1
   fi
+  if [[ -z "${DOC_TO_SKETCH_RUN_DIR:-}" ]]; then
+    echo "错误: 无人值守模式必须由运营方设置 DOC_TO_SKETCH_RUN_DIR（任务共用的计数目录）" >&2
+    exit 1
+  fi
   MODE="unattended"
 fi
 
@@ -127,7 +131,7 @@ fi
 mkdir -p "$OUTPUT_DIR"
 COUNT_FILE=""
 if [[ "$MODE" == "unattended" ]]; then
-  COUNT_FILE="${DOC_TO_SKETCH_RUN_DIR:-$OUTPUT_DIR}/.doc-to-sketch-count"
+  COUNT_FILE="${DOC_TO_SKETCH_RUN_DIR}/.doc-to-sketch-count"
   python3 "$SCRIPT_DIR/image_audit.py" reserve "$COUNT_FILE" "$DOC_TO_SKETCH_MAX_IMAGES"
 fi
 
