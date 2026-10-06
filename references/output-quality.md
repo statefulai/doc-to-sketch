@@ -135,3 +135,17 @@ Mention:
 - Major assumptions
 - Verification performed
 - Remaining risks
+
+## Cross-audit checklist for unattended outputs
+
+The independent reviewer reads each `sketch-receipt.jsonl` row, resolves its relative `output_file` against the directory containing that receipt, and opens the resulting image. For **each image**, check and record:
+
+- Whether every item in `required_text` is present and exact.
+- Whether there is any extra, garbled, or unreadable text.
+- Whether the visual style matches the deck's style anchor.
+- Whether the image ratio and actual pixel dimensions fit the page role and receipt `size`.
+- Whether any decorative people appear when the host forbids them.
+- Whether the file's SHA-256 matches `image_sha256` in the receipt (and its byte count matches `bytes`).
+- Whether the image's SHA-256 appears in a receipt row; **reject every delivered image with no matching receipt**, even if it looks correct.
+
+Give each image an explicit `accepted` or `rejected` conclusion with reasons. Append one conclusion per image to `sketch-review.jsonl` in the receipt directory, with `image_sha256`, `verdict` (`accepted` or `rejected`), `reasons` (a list), `reviewer`, and ISO 8601 `timestamp`. Use `python3 scripts/image_audit.py review --output-dir <dir> --image-sha256 <sha256> --verdict <accepted|rejected> --reviewer <name> --reason <reason>` (repeat `--reason` as needed); the command rejects a hash absent from the receipt. Do not edit the original `sketch-receipt.jsonl` or its `pending_cross_audit` rows. Do not use any rejected image. Until this independent review is complete, images remain **待交叉审计**.

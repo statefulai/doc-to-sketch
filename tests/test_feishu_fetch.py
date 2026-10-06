@@ -15,6 +15,7 @@ import os
 import sys
 import tempfile
 import time
+import unittest
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -234,7 +235,7 @@ check("_fetch_children 已移除",
 # ── E2E 集成测试 ──
 print("\n── E2E 集成测试 ──")
 
-if orig_token_file.exists():
+if __name__ == "__main__" and orig_token_file.exists():
     auth = ff.FeishuAuth()
     try:
         auth.get_token()
@@ -273,10 +274,18 @@ if orig_token_file.exists():
         except Exception as exc:
             check("E2E: wiki → Markdown", False, str(exc))
 else:
-    print("  ⚠️  无 token，跳过 E2E")
+    print("  ⚠️  无 token 或通过 unittest 导入，跳过 E2E")
 
 
 # ── 汇总 ──
 print(f"\n{'='*50}")
 print(f"结果: {PASS} 通过, {FAIL} 失败 (共 {PASS + FAIL})")
-sys.exit(1 if FAIL else 0)
+
+
+class ExistingOfflineChecks(unittest.TestCase):
+    def test_checks_passed(self):
+        self.assertEqual(FAIL, 0, f"{FAIL} of {PASS + FAIL} existing checks failed")
+
+
+if __name__ == "__main__":
+    sys.exit(1 if FAIL else 0)
