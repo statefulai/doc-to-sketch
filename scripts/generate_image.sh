@@ -7,8 +7,8 @@ set -euo pipefail
 # 当宿主没有原生图片生成功能时，用户可以手动调用此脚本，
 # 将已生成的 prompt 发送到用户配置的外部图片生成服务，得到 PNG。
 #
-# 这不是 doc-to-sketch 的默认工作流。
-# 默认路径是宿主原生图片生成（如 Codex 内置 image model）。
+# 有人值守时，默认路径是宿主原生图片生成（如 Codex 内置 image model）。
+# 无人值守时，只允许通过本脚本调用外部图片 API。
 #
 # 环境变量（必须）:
 #   IMAGE_API_KEY     用户自己的 API 密钥（含鉴权前缀，如 Bearer sk-xxx 或 sk-xxx）
@@ -130,9 +130,10 @@ fi
 # ---- 准备输出 ----
 mkdir -p "$OUTPUT_DIR"
 COUNT_FILE=""
+LEASE=""
 if [[ "$MODE" == "unattended" ]]; then
   COUNT_FILE="${DOC_TO_SKETCH_RUN_DIR}/.doc-to-sketch-count"
-  python3 "$SCRIPT_DIR/image_audit.py" reserve "$COUNT_FILE" "$DOC_TO_SKETCH_MAX_IMAGES"
+  LEASE=$(python3 "$SCRIPT_DIR/image_audit.py" reserve "$COUNT_FILE" "$DOC_TO_SKETCH_MAX_IMAGES")
 fi
 
 SUCCESS=0
@@ -142,8 +143,8 @@ cleanup() {
     if [[ -n "$FILEPATH" ]]; then
       rm -f "$FILEPATH"
     fi
-    if [[ -n "$COUNT_FILE" ]]; then
-      python3 "$SCRIPT_DIR/image_audit.py" release "$COUNT_FILE" || true
+    if [[ -n "$LEASE" ]]; then
+      python3 "$SCRIPT_DIR/image_audit.py" release "$COUNT_FILE" "$LEASE" || true
     fi
   fi
   rm -f "${TMPFILE:-}"

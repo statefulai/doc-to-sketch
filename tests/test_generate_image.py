@@ -1,6 +1,7 @@
 """Offline integration tests for the fallback image generator."""
 
 import base64
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -14,6 +15,7 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "generate_image.sh"
+AUDIT = SCRIPT.with_name("image_audit.py")
 PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/"
     "lXcAAAAASUVORK5CYII="
@@ -82,6 +84,10 @@ class GenerateImageTests(unittest.TestCase):
     def receipts(self):
         return [json.loads(line) for line in
                 (self.output / "sketch-receipt.jsonl").read_text().splitlines()]
+
+    def audit(self, *args):
+        return subprocess.run(["python3", str(AUDIT), *map(str, args)],
+                              text=True, capture_output=True, timeout=10)
 
     def test_unattended_cap_rejects_second_call(self):
         self.env.update({"DOC_TO_SKETCH_UNATTENDED": "1", "DOC_TO_SKETCH_MAX_IMAGES": "1",
@@ -156,7 +162,66 @@ class GenerateImageTests(unittest.TestCase):
         failed = self.generate("fail")
         self.assertNotEqual(failed.returncode, 0)
         self.assertEqual((self.run_dir / ".doc-to-sketch-count").read_text().strip(), "0")
+        leases = json.loads((self.run_dir / ".doc-to-sketch-count.leases.json").read_text())
+        self.assertEqual(list(leases.values()), ["released"])
         self.assertEqual(self.generate().returncode, 0)
+
+    def test_invalid_lease_cannot_release_slot(self):
+        count_file = self.run_dir / ".doc-to-sketch-count"
+        reserved = self.audit("reserve", count_file, 1)
+        self.assertEqual(reserved.returncode, 0, reserved.stderr)
+        lease = reserved.stdout.strip()
+        self.assertRegex(lease, r"^\d+-[0-9a-f]{32}$")
+        invalid = self.audit("release", count_file, "forged-lease")
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn("无效", invalid.stderr)
+        self.assertEqual(count_file.read_text().strip(), "1")
+        self.assertEqual(self.audit("release", count_file, lease).returncode, 0)
+
+    def test_repeated_release_is_rejected(self):
+        count_file = self.run_dir / ".doc-to-sketch-count"
+        reserved = self.audit("reserve", count_file, 1)
+        self.assertEqual(reserved.returncode, 0, reserved.stderr)
+        lease = reserved.stdout.strip()
+        first = self.audit("release", count_file, lease)
+        second = self.audit("release", count_file, lease)
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertNotEqual(second.returncode, 0)
+        self.assertEqual(count_file.read_text().strip(), "0")
+
+    def test_review_requires_receipted_hash(self):
+        self.assertEqual(self.generate().returncode, 0)
+        receipt_file = self.output / "sketch-receipt.jsonl"
+        original_receipt = receipt_file.read_bytes()
+        missing = self.audit("review", "--output-dir", self.output,
+                             "--image-sha256", "0" * 64, "--verdict", "rejected",
+                             "--reason", "unreceipted", "--reviewer", "test-reviewer")
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertIn("不存在", missing.stderr)
+        self.assertFalse((self.output / "sketch-review.jsonl").exists())
+        actual_hash = self.receipts()[0]["image_sha256"]
+        reviewed = self.audit("review", "--output-dir", self.output,
+                              "--image-sha256", actual_hash, "--verdict", "accepted",
+                              "--reviewer", "test-reviewer")
+        self.assertEqual(reviewed.returncode, 0, reviewed.stderr)
+        review = json.loads((self.output / "sketch-review.jsonl").read_text().strip())
+        self.assertEqual(review["image_sha256"], actual_hash)
+        self.assertEqual(review["verdict"], "accepted")
+        self.assertEqual(review["reasons"], [])
+        self.assertEqual(review["reviewer"], "test-reviewer")
+        datetime.fromisoformat(review["timestamp"])
+        self.assertEqual(receipt_file.read_bytes(), original_receipt)
+
+    def test_concurrent_receipts_are_two_json_lines(self):
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(self.generate, ("first", "second")))
+        for result in results:
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        rows = self.receipts()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len({row["output_file"] for row in rows}), 2)
+        for row in rows:
+            self.assertEqual((self.output / row["output_file"]).read_bytes(), PNG)
 
 
 if __name__ == "__main__":

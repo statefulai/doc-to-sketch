@@ -41,11 +41,11 @@ cd ~/.agents/skills/doc-to-sketch && bash scripts/doctor.sh
 ![路径选择](assets/path-decision-tree.svg)
 
 - **Path A** 直接出图 → `Use $doc-to-sketch 把这篇文章做成 1 张封面图 + 3 张正文配图。`
-  宿主有原生图像生成（Codex、Claude Code），直接输出 PNG 页面图 + contact sheet。
+  有人值守且宿主有原生图像生成（Codex、Claude Code）时，直接输出 PNG 页面图 + contact sheet。
 - **Path B** 在线出图 → `Use $doc-to-sketch 把这篇文章做成图文 deck，用 fallback 生成图片。`
-  宿主没有原生生图，但配置了 `IMAGE_API_KEY` + `IMAGE_API_URL`（见 `.env.example`），skill 会询问后通过外部 API 生成。
+  已配置 `IMAGE_API_KEY` + `IMAGE_API_URL`（见 `.env.example`）时，通过外部 API 生成。有人值守时需先确认；无人值守时只允许此生图路径。
 - **Path C** 先出规划 → `Use $doc-to-sketch 帮我规划一套中文手绘技术图的 blueprint。`
-  无生图能力也无 API 配置，输出完整 blueprint + 每页可直接粘贴到 ChatGPT/Midjourney 的 prompt 文件。
+  没有可用生图路径时输出完整 blueprint + 每页可直接粘贴到 ChatGPT/Midjourney 的 prompt 文件；无人值守且未配置 API 时，即使宿主能原生生图也走此路径。
 
 完整示例见 [examples/prompts.md](examples/prompts.md)。
 
@@ -98,9 +98,11 @@ scripts/generate_image.sh --prompt-file prompt.txt --size 1920x1080 --output-dir
 
 ### 无人值守模式（可选）
 
-运营方可在宿主环境预先授权并设定单次任务上限：同时设置 `DOC_TO_SKETCH_UNATTENDED=1`、正整数 `DOC_TO_SKETCH_MAX_IMAGES` 和任务共用的 `DOC_TO_SKETCH_RUN_DIR`。Agent 不得自行设置这三个变量。缺少前两个变量之一时维持有人值守行为，Path B 调用前仍需明确确认；已启用无人值守却缺少 `DOC_TO_SKETCH_RUN_DIR` 时拒绝生图。Path A/B 共用该目录下的计数文件，即使图片写入不同输出目录也受同一上限约束；超出上限的页面交付 prompt。
+运营方可在宿主环境预先授权并设定单次任务上限：同时设置 `DOC_TO_SKETCH_UNATTENDED=1`、正整数 `DOC_TO_SKETCH_MAX_IMAGES` 和任务共用的 `DOC_TO_SKETCH_RUN_DIR`。Agent 不得自行设置这三个变量。缺少前两个变量之一时维持有人值守行为，Path B 调用前仍需明确确认；已启用无人值守却缺少 `DOC_TO_SKETCH_RUN_DIR` 时拒绝生图。无人值守时，即使宿主有原生生图能力也不用 Path A：只通过 Path B 脚本出图；未配置外部 API 则走 Path C。Path B 使用任务目录下的共用计数文件，即使图片写入不同输出目录也受同一上限约束；超出上限的页面交付 prompt。
 
-Path B 每次成功出图都会在输出目录追加 `sketch-receipt.jsonl`；调用时可用 `--required-text-file` 传入每页必需文字清单（JSON 字符串数组或每行一条）。回执中的 `output_file` 相对输出目录，另含图片哈希及 `pending_cross_audit` 状态。Path A 也需记录同格式回执。无人值守图片必须经过逐张交叉审计，审计通过前均为“待交叉审计”。
+本地计数与租约只防止误用，不构成安全或硬成本边界：Agent 可以改动自身进程环境。硬预算必须由运营方在服务商侧设置，使用专用图片 API key，并为该 key 配置消费或速率上限。
+
+Path B 在有人值守和无人值守模式下每次成功出图，都会在输出目录追加 `sketch-receipt.jsonl`；调用时可用 `--required-text-file` 传入每页必需文字清单（JSON 字符串数组或每行一条）。回执中的 `output_file` 相对输出目录，另含图片哈希及 `pending_cross_audit` 状态。无人值守图片必须经过逐张交叉审计，审计通过前均为“待交叉审计”。
 
 ## 参考
 

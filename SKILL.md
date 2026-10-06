@@ -9,15 +9,15 @@ Turn source material into a Chinese handdrawn technical PPT-style image deck. Su
 
 ## Operating Rule
 
-When you have a built-in image generation tool, default production output is complete raster page images. Blog/article covers default to 21:9; body illustrations and standard deck pages default to 16:9. Each page is a final visual deliverable with both diagram and Chinese text included in the image.
+In attended mode, when you have a built-in image generation tool, default production output is complete raster page images. Blog/article covers default to 21:9; body illustrations and standard deck pages default to 16:9. Each page is a final visual deliverable with both diagram and Chinese text included in the image.
 
-When you do not have a built-in image generation tool, default output is a structured blueprint plus ready-to-use prompt files for each page. This blueprint is a complete, valuable deliverable — not a fallback or degraded product. It includes full page-by-page prompts that the user can take to any image generation service.
+When no allowed image generation path is available, default output is a structured blueprint plus ready-to-use prompt files for each page. This blueprint is a complete, valuable deliverable — not a fallback or degraded product. It includes full page-by-page prompts that the user can take to any image generation service.
 
 In this skill, "PPT", "slides", "page", and "deck" mean finished PPT-style visual page images, not editable presentation/document files. Do not route to presentation or document packaging merely because the user says PPT/PPTX/PDF. Editable PPTX, image-based PPTX, and PDF export are out of scope for this skill.
 
 Do not use deterministic drawing scripts, HTML, SVG, canvas, or python-pptx as the primary visual generator for style samples. Deterministic post-processing is allowed for crop/resize, contact sheets, or exact text overlay when the generated image direction is accepted but image text fidelity is not good enough.
 
-Produce a planning blueprint when the user asks to plan, outline, or design first, or when the current host does not have image generation capability. Production output is final PNG page images plus a contact sheet when there are multiple pages.
+Produce a planning blueprint when the user asks to plan, outline, or design first, or when no allowed image generation path is available. Production output is final PNG page images plus a contact sheet when there are multiple pages.
 
 ## Resource Map
 
@@ -37,7 +37,9 @@ Do not use legacy bordered PPT reference images unless the user explicitly asks 
 
 ## Unattended mode
 
-Only the operator may set `DOC_TO_SKETCH_UNATTENDED=1`, a positive integer `DOC_TO_SKETCH_MAX_IMAGES`, and the task-wide `DOC_TO_SKETCH_RUN_DIR` in the host environment. Never set these variables yourself. If either of the first two is missing, keep attended behavior, including explicit confirmation before Path B. When both are present, unattended mode requires `DOC_TO_SKETCH_RUN_DIR`; without it, stop before generation. The operator's standing authorization then covers Path A and Path B without per-image prompts. Use the operator-provided run directory for the shared image cap even when pages have different output directories. Rank pages before generation, generate only the highest-priority pages within the cap, and deliver all remaining pages through Path C prompts. Every generated image needs a receipt with `pending_cross_audit`; report the images as **待交叉审计**, never as verified.
+Only the operator may set `DOC_TO_SKETCH_UNATTENDED=1`, a positive integer `DOC_TO_SKETCH_MAX_IMAGES`, and the task-wide `DOC_TO_SKETCH_RUN_DIR` in the host environment. Never set these variables yourself. If either of the first two is missing, keep attended behavior, including explicit confirmation before Path B. When both are present, unattended mode requires `DOC_TO_SKETCH_RUN_DIR`; without it, stop before generation. Unattended mode uses **Path B only** for images, even when the host has native image generation; if the fallback API is not configured, use Path C. Use the operator-provided run directory for the shared image cap even when pages have different output directories. Rank pages before generation, generate only the highest-priority pages within the cap, and deliver all remaining pages through Path C prompts. Every generated image needs a receipt with `pending_cross_audit`; report the images as **待交叉审计**, never as verified.
+
+The local counter and leases prevent accidental overuse; they are not a security or hard spending boundary because an agent can change its own process environment. For a hard budget, the operator must use a dedicated image API key with a provider-side spending or rate limit. Do not treat the local cap as a substitute for that provider control.
 
 ## Workflow
 
@@ -75,12 +77,11 @@ Only the operator may set `DOC_TO_SKETCH_UNATTENDED=1`, a positive integer `DOC_
 
 6. **Build output**
    - Before choosing an output path, determine your current image generation capability:
-     - **Path A — Native image generation available**: You have a built-in image generation tool (e.g., you are running in Codex, Claude Code, or another host with native image gen). Proceed with full image production.
-     - **Path B — Fallback API configured**: You do not have native image generation, but `IMAGE_API_KEY` and `IMAGE_API_URL` are set in the environment. In attended mode, inform the user: "I can generate images using your configured API provider. This will send prompts to an external service and consume your API quota. Should I proceed?" Only call `scripts/generate_image.sh` after explicit user confirmation. In unattended mode, use the operator's standing authorization and the image cap.
-     - **Path C — No image generation available**: You have neither native image gen nor a configured fallback API. Deliver a **blueprint + prompt package** as the primary output. This is a complete, valuable deliverable.
-   - If you cannot reliably confirm that you have native image generation capability, do not assume Path A. Default to Path C or ask the user to confirm.
+     - **Path A — Native image generation available, attended only**: You have a built-in image generation tool (e.g., you are running in Codex, Claude Code, or another host with native image gen). Proceed with full image production only in attended mode.
+     - **Path B — Fallback API configured**: `IMAGE_API_KEY` and `IMAGE_API_URL` are set in the environment. In attended mode without native image generation, inform the user: "I can generate images using your configured API provider. This will send prompts to an external service and consume your API quota. Should I proceed?" Only call `scripts/generate_image.sh` after explicit user confirmation. In unattended mode, use Path B with the operator's standing authorization and the script's image cap, even if native image generation is available.
+     - **Path C — No allowed image generation path**: Deliver a **blueprint + prompt package** when neither image path is available, or when unattended mode has no configured fallback API. This is a complete, valuable deliverable.
+   - In attended mode, if you cannot reliably confirm native image generation capability, do not assume Path A. Use a configured Path B after confirmation, or deliver Path C.
    - **Path A execution** (native image gen):
-     - In unattended mode, require the operator-provided `DOC_TO_SKETCH_RUN_DIR` before generation. Reserve one slot before each image with `python3 scripts/image_audit.py reserve "$DOC_TO_SKETCH_RUN_DIR/.doc-to-sketch-count" "$DOC_TO_SKETCH_MAX_IMAGES"`. Release it with `python3 scripts/image_audit.py release "$DOC_TO_SKETCH_RUN_DIR/.doc-to-sketch-count"` if generation fails. After a successful image, use `python3 scripts/image_audit.py receipt --output-file <image> --output-dir <dir> --mode unattended --model <model> --size <actual-WxH> --prompt-file <page-prompt-file> --required-text-file <page-text-file>`; the receipt must succeed before delivery.
      - Use one image generation call per distinct page brief, not a generic repeated template.
      - When the user asks for a cover plus body illustrations, generate the cover as 21:9 and body illustrations as 16:9 unless the user specifies otherwise.
      - Before generating multiple pages, write one compact deck style lock and reuse it verbatim in every page prompt. Add page-specific layout instructions only for the central diagram/content area.
@@ -88,14 +89,14 @@ Only the operator may set `DOC_TO_SKETCH_UNATTENDED=1`, a positive integer `DOC_
      - If exact Chinese text is mission-critical or repeated generations render text incorrectly, reduce the text budget first. If needed, generate the accepted visual with blank label spaces and add exact text as deterministic post-processing; the final deliverable is still a raster page image.
      - Save final selected images into the workspace, and make a contact sheet when generating multiple pages.
      - Check actual image dimensions. If the image model returns near-target native sizes, report the actual size; normalize body illustrations to 1920x1080 and cover images to 2520x1080 only when strict delivery dimensions are requested.
-   - **Path B execution** (fallback API): Same page and style rules as Path A, but use `scripts/generate_image.sh --prompt-file <file> --required-text-file <page-text-file> --size <WxH> --output-dir <dir>` for each page. Write each page prompt to a temporary file first. The script reserves the unattended slot itself; do not reserve a second slot. It appends a receipt in both modes.
+   - **Path B execution** (fallback API): Same page and style rules as Path A, but use `scripts/generate_image.sh --prompt-file <file> --required-text-file <page-text-file> --size <WxH> --output-dir <dir>` for each page. Write each page prompt to a temporary file first. The script manages the unattended cap and appends a receipt in both modes.
    - **Path C execution** (blueprint + prompt package):
      - Deliver a structured blueprint: deck type, slide count, and for each page: title, main point, archetype, content blocks, visual brief, and exact Chinese text list.
      - Write a ready-to-use prompt file for each page (following `references/prompt-patterns.md`). Each prompt must be self-contained — a user can paste it directly into ChatGPT, Midjourney, or any image generation service and get a usable result.
      - At the end, include a "Next Steps" section:
        1. "Paste any prompt into ChatGPT/Midjourney/DALL-E to generate that page."
        2. "Or configure `IMAGE_API_KEY` and `IMAGE_API_URL` (see `.env.example`), then re-run this skill to generate all pages automatically."
-       3. "Or switch to Codex / Claude Code for native one-step generation."
+       3. "In attended mode, you can switch to Codex / Claude Code for native one-step generation."
    - **Post-processing — size optimization**: After generation, check file sizes. If the output is intended for web embedding (README, blog, docs) and images exceed 500KB, offer to run `scripts/optimize_output.py <output-dir> --keep-originals` to convert PNG to JPEG (quality 85, typically 85-95% size reduction). Do not auto-convert — confirm with the user first. Always use `--keep-originals` unless the user explicitly asks to remove originals. PNG remains the default lossless output; JPEG is an explicit optimization step.
    - For explicit planning-only requests (user says "先规划" / "不要生图"), always deliver blueprint regardless of capability.
 
@@ -111,7 +112,7 @@ Use these defaults unless the user says otherwise:
 - Language: Simplified Chinese.
 - Audience: Chinese learners with some technical curiosity but not necessarily expert depth.
 - Deck length: 8-12 slides for an article, 15-30 slides for a course module, 5-8 slides for a short idea.
-- Output: determined by host capability. With image gen: final PNG page images plus contact sheet and blueprint summary. Without image gen: structured blueprint plus ready-to-paste prompt files for each page.
+- Output: determined by host capability and mode. Attended with native image gen, or unattended with a configured fallback API: final PNG page images plus contact sheet and blueprint summary. Unattended without fallback API: blueprint plus ready-to-paste prompt files.
 - Blog/article visual split: cover image is 21:9; body illustrations are 16:9.
 - Style: refined near-white Chinese handdrawn technical article/PPT illustration V6.
 
