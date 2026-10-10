@@ -448,7 +448,8 @@ def missing_profile_message():
 class ReviewArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         argv = getattr(self, "review_argv", sys.argv[1:])
-        if "--profile" not in argv:
+        gave_profile = any(arg == "--profile" or arg.startswith("--profile=") for arg in argv)
+        if not gave_profile:
             missing_profile_message()
         self.print_usage(sys.stderr)
         self.exit(1, f"{self.prog}: error: {message}\n")
@@ -457,7 +458,8 @@ class ReviewArgumentParser(argparse.ArgumentParser):
 def main(argv=None):
     raw_argv = sys.argv[1:] if argv is None else list(argv)
     parser = ReviewArgumentParser(
-        description="Build a contact sheet and mark file for list-tile candidates."
+        description="Build a contact sheet and mark file for list-tile candidates.",
+        allow_abbrev=False,
     )
     parser.review_argv = raw_argv
     parser.add_argument("directory", type=Path, help="Directory that contains cand-*.png")

@@ -92,6 +92,12 @@ result = run_review(["--profile", "x.json"])
 check("只给 --profile 不给目录时退出 1", result.returncode == 1, f"code {result.returncode} {result.stderr}")
 result = run_review(["--profile"])
 check("--profile 不跟值时退出 1", result.returncode == 1, f"code {result.returncode} {result.stderr}")
+result = run_review(["--profile=x.json"])
+check(
+    "等号形式给了风格档时不误报",
+    result.returncode == 1 and "需要 --profile" not in result.stderr,
+    f"code {result.returncode} {result.stderr}",
+)
 
 
 try:
