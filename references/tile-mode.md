@@ -86,6 +86,8 @@ This mode does not export layers and does not make hover motion.
 
 Generate pixels with the host image tool. Do not call an image API from this mode.
 
+In unattended mode (`DOC_TO_SKETCH_UNATTENDED=1` and `DOC_TO_SKETCH_MAX_IMAGES` are both set, see SKILL.md), do not generate tiles. Deliver the prompts and the review command as in "No image tool".
+
 ## Judge
 
 Keep a candidate when all of these are true:
@@ -106,8 +108,6 @@ python3 scripts/tile_review.py output/tiles/<slug> --profile tile-style.json
 ```
 
 The user saves the images as `cand-N.png` and runs the command.
-
-When `DOC_TO_SKETCH_UNATTENDED=1` is set, do not generate tiles. Deliver the prompts and the review command as described in this section.
 
 ## Gate defaults
 
