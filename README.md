@@ -6,7 +6,7 @@
 
 doc-to-sketch 是一个把文档内容转换为**中文手绘技术解释图**的 AI Skill。
 
-常见场景：文章封面 + 正文配图 · 课程/训练营解释图 · 长文先规划再出图
+常见场景：文章封面 + 正文配图 · 课程/训练营解释图 · 长文先规划再出图 · 网站列表小图
 
 主要产出是 PNG 页面图（无生图能力时先输出 blueprint + prompts）。支持 Markdown、DOCX、PDF、PPTX、纯文本和飞书文档 URL 作为输入。
 
@@ -63,6 +63,18 @@ cd ~/.agents/skills/doc-to-sketch && bash scripts/doctor.sh
 - 图片里中文越短越稳定，每页建议多生几次择优
 - AI 图像模型可能出现错字、风格漂移，不要默认第一张就是终稿
 - PPTX/PDF 可以作为输入读取，但不是输出格式
+
+## 列表小图
+
+给网站列表里的每一条（作品、文章、生活记录或任意列表）配一张方形小图。
+
+- 「用 doc-to-sketch 给这篇文章画一张列表小图。」后面附正文、链接或标题加一句话。
+- 「给『读书地图』画一张小图，紫色放在图钉上。」
+- 「按我网站的风格档再出 6 张。」
+
+同一站点的所有小图共用一份风格档 `tile-style.json`。它放在站点项目里，颜色、尺寸、张数和风格锁都写在这份文件里，换一个站点就换一份。项目里还没有风格档时，skill 会先问你颜色和显示尺寸，不会直接套用示例。[examples/tile-style.example.json](examples/tile-style.example.json) 是一个已定稿站点的真实风格档，可以复制后改成自己的。
+
+产出在 `output/tiles/<slug>/`：几张候选图，外加一张对照图 `candidate-review.png`，把每张候选放在浅色、深色两种背景下比较。选定的那张复制为 `source.png`。
 
 ## 特色功能
 
@@ -125,14 +137,16 @@ ln -s "$(pwd)" ~/.claude/skills/doc-to-sketch
 .
 ├── SKILL.md                    ← Skill 定义入口
 ├── references/                 ← prompt 资产（叙事、版式、视觉、质量）
-├── assets/                     ← 风格锚点图 + theme tokens
+├── assets/                     ← 风格锚点图 + theme tokens + 列表小图基础风格
 ├── scripts/
 │   ├── feishu_fetch.py         ← 飞书文档获取
 │   ├── generate_image.sh       ← 图像生成 fallback
+│   ├── tile_review.py          ← 列表小图对照
 │   └── doctor.sh               ← 配置自检
 ├── examples/
 │   ├── images/                 ← 示例输出
-│   └── prompts.md              ← prompt 示例
+│   ├── prompts.md              ← prompt 示例
+│   └── tile-style.example.json ← 列表小图示例风格档
 ├── .env.example                ← 环境变量模板
 └── README.md
 ```
