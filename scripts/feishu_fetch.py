@@ -17,6 +17,8 @@
     export FEISHU_APP_SECRET=xxx
 """
 
+from __future__ import annotations
+
 import argparse
 import http.server
 import json
