@@ -1,0 +1,26 @@
+{
+  "_source": "sanze.dev R06",
+  "palette": {
+    "ink": "#4A443D",
+    "accent": "#6754C8",
+    "accent_name": "violet",
+    "mat": {
+      "light": "#FFFDF8",
+      "dark": "#F3F0E9"
+    },
+    "paper": {
+      "light": "#F8F4EC",
+      "dark": "#E9E5DC"
+    },
+    "page": {
+      "light": "#FCFCFB",
+      "dark": "#141414"
+    }
+  },
+  "sizes": [200, 56, 48, 22],
+  "candidates": 4,
+  "prompt": {
+    "lock": "Create one isolated fine hand-drawn raster object illustration for a Chinese author's quiet personal website. Square 1:1 canvas, fully transparent background, no surrounding card, no border, no shadow, no lettering, no labels, no watermark, no UI screenshot. The object occupies about 78% of canvas width and 72% of height with balanced clear margins. Premium hard-pencil and technical-pen drawing: warm dark grey ink close to #4A443D, restrained irregular contours, delicate parallel hatching, subtle light neutral paper interiors. One SMALL but clearly saturated violet #6754C8 mark, no other colors, no large violet fills. Draw with economy and clear silhouette readable when resized to 56px; no hairline clutter. Neither glossy nor flat vector; no emoji, no 3D render, no beige vintage paper. All three project illustrations must feel like the same illustrator, same line weight and same amount of ink.\n\nBold readable outline, at most three elements, thicker contour than fine hatching; must stay recognizable at 28px."
+  },
+  "anchors": []
+}
