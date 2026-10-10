@@ -445,14 +445,25 @@ def missing_profile_message():
     print("      可以从 examples/tile-style.example.json 复制一份，确认后再用", file=sys.stderr)
 
 
+class ReviewArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        argv = getattr(self, "review_argv", sys.argv[1:])
+        if "--profile" not in argv:
+            missing_profile_message()
+        self.print_usage(sys.stderr)
+        self.exit(1, f"{self.prog}: error: {message}\n")
+
+
 def main(argv=None):
-    parser = argparse.ArgumentParser(
+    raw_argv = sys.argv[1:] if argv is None else list(argv)
+    parser = ReviewArgumentParser(
         description="Build a contact sheet and mark file for list-tile candidates."
     )
+    parser.review_argv = raw_argv
     parser.add_argument("directory", type=Path, help="Directory that contains cand-*.png")
     parser.add_argument("--profile", type=Path, help="Site style profile JSON")
     parser.add_argument("--anchors", nargs="*", default=[], help="Accepted tiles to show beside candidates")
-    args = parser.parse_args(argv)
+    args = parser.parse_args(raw_argv)
 
     if args.profile is None:
         missing_profile_message()

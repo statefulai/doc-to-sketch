@@ -61,7 +61,7 @@ for path in static_files:
     body = path.read_text(encoding="utf-8")
     relative = path.relative_to(REPO)
     for needle in FORBIDDEN:
-        check(f"{relative} 不含 {needle}", needle not in body, "found")
+        check(f"{relative} 不含 {needle}", needle.lower() not in body.lower(), "found")
 
 print("\n── 2. 文档里的阈值与脚本默认值一致 ──")
 
@@ -80,6 +80,18 @@ with tempfile.TemporaryDirectory() as raw_dir:
         "examples/tile-style.example.json" in result.stderr,
         result.stderr,
     )
+
+result = run_review([])
+check("不带参数退出 1", result.returncode == 1, f"code {result.returncode} {result.stderr}")
+check(
+    "不带参数时提示示例风格档",
+    "examples/tile-style.example.json" in result.stderr,
+    result.stderr,
+)
+result = run_review(["--profile", "x.json"])
+check("只给 --profile 不给目录时退出 1", result.returncode == 1, f"code {result.returncode} {result.stderr}")
+result = run_review(["--profile"])
+check("--profile 不跟值时退出 1", result.returncode == 1, f"code {result.returncode} {result.stderr}")
 
 
 try:

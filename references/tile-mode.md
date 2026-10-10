@@ -41,7 +41,7 @@ Fields:
 - `sizes`. Pixel sizes for the review sheet. The last item is the smallest size the site displays.
 - `candidates`. Default count. When the field is absent, use 4. When the user states a count, use the user's count.
 - `prompt`. Use one of the two shapes below. When both are present, `lock` wins.
-  - `{ "preset": "<base style name>", "vars": { "context": "...", "set_rule": "..." } }` fills a base style.
+  - `{ "preset": "<base style name>", "vars": { "context": "...", "set_rule": "..." } }` fills a base style. `preset` is the file name under `assets/tile-styles/` without `.json`, for example `fine-pencil`.
   - `{ "lock": "<full style-lock text>" }` is the style lock, verbatim. Use it to reproduce a finished style word for word.
 - `gates`. Optional thresholds. A missing key uses the default in `scripts/tile_review.py`. The defaults are copied below.
 - `anchors`. Paths of thumbnails this site already accepted. The review sheet shows them beside the candidates. A relative path starts at the profile file. Paths passed to `--anchors` come after these paths.
@@ -107,6 +107,8 @@ python3 scripts/tile_review.py output/tiles/<slug> --profile tile-style.json
 
 The user saves the images as `cand-N.png` and runs the command.
 
+When `DOC_TO_SKETCH_UNATTENDED=1` is set, do not generate tiles. Deliver the prompts and the review command as described in this section.
+
 ## Gate defaults
 
 `scripts/tile_review.py` reads `gates` from the profile. Missing keys use these values:
@@ -137,5 +139,7 @@ Flags:
 ## Script exits
 
 Exit 1 when `--profile` is missing, the profile is missing or invalid, Pillow is missing, the directory is missing, or the directory has no `cand-*.png`. A missing `--profile` tells the user to copy `examples/tile-style.example.json` and confirm it before use.
+
+A command-line usage error also exits 1.
 
 Exit 2 when any candidate or anchor image cannot be read.
