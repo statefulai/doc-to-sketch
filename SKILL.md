@@ -1,6 +1,6 @@
 ---
 name: doc-to-sketch
-description: Create final Chinese handdrawn technical article/PPT-style page images from articles, Markdown, PDFs, DOCX files, Feishu (飞书) document URLs, existing slide decks, course notes, scripts, outlines, or rough ideas. Use when the user asks to turn content into PPT/PPTX/slides/courseware/课件/演示稿/配图/效果图/帮我出图 in a refined Chinese handdrawn technical explanation style, to plan such pages, to choose page layouts from semantic content, or to generate complete image-model pages with Chinese text baked into the final visual. Default article outputs use 21:9 covers and 16:9 body illustrations.
+description: Create final Chinese handdrawn technical article/PPT-style page images from articles, Markdown, PDFs, DOCX files, Feishu (飞书) document URLs, existing slide decks, course notes, scripts, outlines, or rough ideas. Use when the user asks to turn content into PPT/PPTX/slides/courseware/课件/演示稿/配图/效果图/帮我出图 in a refined Chinese handdrawn technical explanation style, to plan such pages, to choose page layouts from semantic content, or to generate complete image-model pages with Chinese text baked into the final visual. Default article outputs use 21:9 covers and 16:9 body illustrations. Also draws small square list thumbnails (列表小图 for works, articles, life notes or any list) in a site's own locked style profile.
 ---
 
 # Doc to Sketch
@@ -29,6 +29,7 @@ Load only the references needed for the current task:
 - `references/visual-dna-v6.md`: handdrawn Chinese technical PPT visual system and deck-level style lock.
 - `references/output-quality.md`: output contracts and verification gates for final image pages.
 - `references/prompt-patterns.md`: prompt templates for complete image-model slide pages.
+- `references/tile-mode.md`: 列表小图模式.
 
 Use `assets/theme-tokens.json` as the compact theme token file when writing prompts.
 Use `assets/style-anchor-cover-21x9.png` as the active style anchor for blog/article cover and body illustrations.
@@ -42,6 +43,8 @@ Only the operator may set `DOC_TO_SKETCH_UNATTENDED=1`, a positive integer `DOC_
 The local counter and leases prevent accidental overuse; they are not a security or hard spending boundary because an agent can change its own process environment. For a hard budget, the operator must use a dedicated image API key with a provider-side spending or rate limit. Do not treat the local cap as a substitute for that provider control.
 
 ## Workflow
+
+When the request is for 列表小图, 作品小图, 文章小图, 生活小图, or 纸片小图, read `references/tile-mode.md` and follow it. Skip the full-page flow below.
 
 1. **Ingest material**
    - Read the provided content or attached file.

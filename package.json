@@ -35,7 +35,9 @@
     "scripts/feishu_fetch.py",
     "scripts/generate_image.sh",
     "scripts/doctor.sh",
+    "scripts/tile_review.py",
     "assets/",
-    "examples/prompts.md"
+    "examples/prompts.md",
+    "examples/tile-style.example.json"
   ]
 }

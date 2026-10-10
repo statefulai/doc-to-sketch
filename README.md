@@ -64,6 +64,14 @@ cd ~/.agents/skills/doc-to-sketch && bash scripts/doctor.sh
 - AI 图像模型可能出现错字、风格漂移，不要默认第一张就是终稿
 - PPTX/PDF 可以作为输入读取，但不是输出格式
 
+## 列表小图
+
+同一站点的列表小图共用一份风格档，换一个站点就换一份。示例见 [examples/tile-style.example.json](examples/tile-style.example.json)。
+
+- 「用 doc-to-sketch 给这篇文章画一张列表小图。」后面附正文、链接或标题加一句话。
+- 「给『读书地图』画一张小图，紫色放在图钉上。」
+- 「按我网站的风格档再出 6 张。」
+
 ## 特色功能
 
 ### 飞书文档读取
